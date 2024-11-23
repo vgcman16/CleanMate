@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Run SwiftLint
       uses: norio-nomura/action-swiftlint@3.2.1
@@ -21,10 +21,10 @@ jobs:
 
   podlint:
     name: Pod Lint
-    runs-on: macos-latest
+    runs-on: macos-13
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Setup Ruby
       uses: ruby/setup-ruby@v1
@@ -32,8 +32,7 @@ jobs:
         ruby-version: '3.3.0'
         bundler-cache: true
     
-    - name: Install CocoaPods
-      run: gem install cocoapods
-    
-    - name: Lint Podfile
-      run: pod lib lint
+    - name: Pod Lint
+      run: |
+        gem install cocoapods
+        pod lib lint

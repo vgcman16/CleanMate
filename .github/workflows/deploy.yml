@@ -2,7 +2,7 @@ name: Deploy to TestFlight
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -12,7 +12,7 @@ jobs:
     env:
       KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
       KEYCHAIN_PASSWORD: cleanmate123
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3

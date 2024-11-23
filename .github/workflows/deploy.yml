@@ -196,6 +196,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
         run: |
           # Create build directory
           BUILD_DIR="${GITHUB_WORKSPACE}/build"
@@ -213,6 +214,10 @@ jobs:
             DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
             PROVISIONING_PROFILE_SPECIFIER="CleanMate Development Profile" \
             CODE_SIGN_IDENTITY="Apple Development" \
+            OTHER_CODE_SIGN_FLAGS="--keychain /Users/runner/Library/Keychains/build.keychain-db" \
+            EXPANDED_CODE_SIGN_IDENTITY="-" \
+            EXPANDED_PROVISIONING_PROFILE="$PROVISIONING_PROFILE_BASE64" \
+            GCC_PREPROCESSOR_DEFINITIONS='${inherited} COCOAPODS=1' \
             | xcpretty
           
           # Export the app
@@ -221,6 +226,7 @@ jobs:
             -archivePath "$BUILD_DIR/CleanMate.xcarchive" \
             -exportOptionsPlist exportOptions.plist \
             -exportPath "$BUILD_DIR" \
+            -allowProvisioningUpdates \
             | xcpretty
           
           # Upload to TestFlight

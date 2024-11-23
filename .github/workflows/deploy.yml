@@ -19,9 +19,9 @@ jobs:
     name: Build and Deploy
     runs-on: macos-15
     env:
-      KEYCHAIN_NAME: app-signing
+      KEYCHAIN_NAME: app-signing.keychain-db
       KEYCHAIN_PATH: /Users/runner/Library/Keychains/app-signing.keychain-db
-      KEYCHAIN_PASSWORD: cleanmate123
+      KEYCHAIN_PASSWORD: temporaryPassword123
 
     steps:
       - name: Checkout repository
@@ -76,6 +76,7 @@ jobs:
         env:
           CERTIFICATE_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
           CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ env.KEYCHAIN_PASSWORD }}
         run: |
           # Debug certificate environment
           if [ -z "$CERTIFICATE_BASE64" ]; then
@@ -90,26 +91,29 @@ jobs:
           
           # Clean up any existing keychain
           security delete-keychain "$KEYCHAIN_PATH" || true
+          rm -f "$KEYCHAIN_PATH" || true
           
           # Create a new keychain
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_NAME"
+          security set-keychain-settings -t 3600 -l "$KEYCHAIN_NAME"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
           
           # Import certificate to keychain
           echo -n "$CERTIFICATE_BASE64" | base64 --decode > /tmp/certificate.p12
-          security import /tmp/certificate.p12 -k "$KEYCHAIN_NAME" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          rm /tmp/certificate.p12
+          security import /tmp/certificate.p12 -k "$KEYCHAIN_NAME" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign -A
+          rm -f /tmp/certificate.p12
           
-          # Add keychain to search list
+          # Add keychain to search list and set as default
           security list-keychains -d user -s "$KEYCHAIN_NAME" $(security list-keychains -d user | tr -d '"')
           security default-keychain -s "$KEYCHAIN_NAME"
           
-          # Allow codesign to access keychain
+          # Partition list and allow codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
           
-          # Verify setup
+          # Debug: List identities
           security find-identity -v -p codesigning "$KEYCHAIN_NAME"
+          security list-keychains
+          security show-keychain-info "$KEYCHAIN_NAME"
 
       - name: Build and Deploy
         env:
@@ -171,3 +175,4 @@ jobs:
         if: always()
         run: |
           security delete-keychain "$KEYCHAIN_NAME" || true
+          rm -f "$KEYCHAIN_PATH" || true

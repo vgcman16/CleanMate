@@ -4,13 +4,24 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - '**/*.swift'
+      - '**/*.xcodeproj/**'
+      - '**/*.xcworkspace/**'
+      - 'Podfile'
+      - 'Podfile.lock'
+      - '.github/workflows/deploy.yml'
 
 permissions: write-all
 
 jobs:
-  debug:
-    name: Debug Environment
+  build-and-deploy:
+    name: Build and Deploy
     runs-on: macos-latest
+    env:
+      KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
+      KEYCHAIN_PASSWORD: cleanmate123
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -21,7 +32,136 @@ jobs:
           pwd
           echo "\nDirectory contents:"
           ls -la
-          echo "\nGit status:"
-          git status
-          echo "\nGit remote:"
-          git remote -v
+          echo "\nWorkspace files:"
+          find . -name "*.xcworkspace" || echo "No workspace found"
+          echo "\nXcode project files:"
+          find . -name "*.xcodeproj" || echo "No project found"
+          echo "\nPodfile location:"
+          find . -name "Podfile" || echo "No Podfile found"
+          echo "\nExport options file:"
+          find . -name "exportOptions.plist" || echo "No exportOptions.plist found"
+          echo "\nEnvironment:"
+          env | grep -i "xcode\|path\|ruby\|pod"
+
+      - name: Select Xcode Version
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.0'
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3.0'
+          bundler-cache: true
+
+      - name: Cache Pods
+        uses: actions/cache@v3
+        with:
+          path: Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Install Cocoapods
+        run: |
+          gem install cocoapods
+          pod install
+
+      - name: Set up certificates
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+        run: |
+          # Debug certificate environment
+          if [ -z "$CERTIFICATE_BASE64" ]; then
+            echo "Error: CERTIFICATE_BASE64 is not set"
+            exit 1
+          fi
+          
+          if [ -z "$CERTIFICATE_PASSWORD" ]; then
+            echo "Error: CERTIFICATE_PASSWORD is not set"
+            exit 1
+          fi
+          
+          # Clean up any existing keychain
+          security delete-keychain "$KEYCHAIN_PATH" || true
+          
+          # Create a new keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          
+          # Import certificate to keychain
+          echo "$CERTIFICATE_BASE64" | base64 --decode > /tmp/certificate.p12
+          security import /tmp/certificate.p12 -k "$KEYCHAIN_PATH" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          rm /tmp/certificate.p12
+          
+          # Add keychain to search list
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+          security default-keychain -s "$KEYCHAIN_PATH"
+          
+          # Allow codesign to access keychain
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          
+          # Verify setup
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
+      - name: Build and Deploy
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        run: |
+          # Debug environment variables
+          echo "Checking environment variables..."
+          [[ -z "$APPLE_TEAM_ID" ]] && echo "APPLE_TEAM_ID is missing" && exit 1
+          [[ -z "$APPLE_ID" ]] && echo "APPLE_ID is missing" && exit 1
+          [[ -z "$APPLE_APP_SPECIFIC_PASSWORD" ]] && echo "APPLE_APP_SPECIFIC_PASSWORD is missing" && exit 1
+          
+          # Create build directory
+          mkdir -p ${{ runner.temp }}/build
+          
+          # Build the app
+          echo "Building app..."
+          xcodebuild -workspace CleanMate.xcworkspace \
+            -scheme CleanMate \
+            -configuration Release \
+            -archivePath ${{ runner.temp }}/build/CleanMate.xcarchive \
+            clean archive \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
+            | xcpretty
+          
+          # Verify archive exists
+          if [ ! -d "${{ runner.temp }}/build/CleanMate.xcarchive" ]; then
+            echo "Archive not found!"
+            exit 1
+          fi
+          
+          # Export the app
+          echo "Exporting app..."
+          xcodebuild -exportArchive \
+            -archivePath ${{ runner.temp }}/build/CleanMate.xcarchive \
+            -exportOptionsPlist exportOptions.plist \
+            -exportPath ${{ runner.temp }}/build \
+            | xcpretty
+          
+          # Verify IPA exists
+          if [ ! -f "${{ runner.temp }}/build/CleanMate.ipa" ]; then
+            echo "IPA not found!"
+            exit 1
+          fi
+          
+          # Upload to TestFlight
+          echo "Uploading to TestFlight..."
+          xcrun altool --upload-app \
+            --type ios \
+            --file ${{ runner.temp }}/build/CleanMate.ipa \
+            --username "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD"
+
+      - name: Cleanup Keychain
+        if: always()
+        run: |
+          security delete-keychain "$KEYCHAIN_PATH" || true

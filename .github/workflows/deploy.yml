@@ -23,6 +23,69 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Verify Secrets
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          echo "Checking secrets format..."
+          
+          # Check CERTIFICATE_BASE64
+          if [ -z "$CERTIFICATE_BASE64" ]; then
+            echo " CERTIFICATE_BASE64 is empty"
+            exit 1
+          else
+            echo " CERTIFICATE_BASE64 is set (length: ${#CERTIFICATE_BASE64})"
+          fi
+          
+          # Check CERTIFICATE_PASSWORD
+          if [ -z "$CERTIFICATE_PASSWORD" ]; then
+            echo " CERTIFICATE_PASSWORD is empty"
+            exit 1
+          else
+            echo " CERTIFICATE_PASSWORD is set (length: ${#CERTIFICATE_PASSWORD})"
+            # Check for common issues
+            if [[ "$CERTIFICATE_PASSWORD" =~ ^[[:space:]] || "$CERTIFICATE_PASSWORD" =~ [[:space:]]$ ]]; then
+              echo " Warning: CERTIFICATE_PASSWORD has leading or trailing whitespace"
+            fi
+          fi
+          
+          # Check APPLE_TEAM_ID
+          if [ -z "$APPLE_TEAM_ID" ]; then
+            echo " APPLE_TEAM_ID is empty"
+            exit 1
+          else
+            echo " APPLE_TEAM_ID is set (length: ${#APPLE_TEAM_ID})"
+          fi
+          
+          # Check APPLE_ID
+          if [ -z "$APPLE_ID" ]; then
+            echo " APPLE_ID is empty"
+            exit 1
+          else
+            echo " APPLE_ID is set (length: ${#APPLE_ID})"
+          fi
+          
+          # Check APPLE_APP_SPECIFIC_PASSWORD
+          if [ -z "$APPLE_APP_SPECIFIC_PASSWORD" ]; then
+            echo " APPLE_APP_SPECIFIC_PASSWORD is empty"
+            exit 1
+          else
+            echo " APPLE_APP_SPECIFIC_PASSWORD is set (length: ${#APPLE_APP_SPECIFIC_PASSWORD})"
+          fi
+          
+          # Verify certificate decoding
+          echo "Verifying certificate decoding..."
+          if echo "$CERTIFICATE_BASE64" | base64 -d > /dev/null 2>&1; then
+            echo " CERTIFICATE_BASE64 is valid base64"
+          else
+            echo " CERTIFICATE_BASE64 is not valid base64"
+            exit 1
+          fi
+
       - name: Select Xcode Version
         uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -66,6 +129,7 @@ jobs:
           # Print certificate file info
           echo "Certificate file info:"
           ls -l certificate.p12
+          file certificate.p12
           
           # Create keychain
           echo "Creating keychain..."
@@ -82,7 +146,7 @@ jobs:
           
           # Import certificate
           echo "Importing certificate..."
-          security import certificate.p12 -k "$KEYCHAIN_PATH" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security import certificate.p12 -k "$KEYCHAIN_PATH" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign -A
           
           # Update keychain search list
           echo "Updating keychain search list..."

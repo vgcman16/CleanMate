@@ -4,7 +4,11 @@ on:
   push:
     branches: [main]
     paths:
-      - 'CleanMate/**'
+      - '**/*.swift'
+      - '**/*.xcodeproj/**'
+      - '**/*.xcworkspace/**'
+      - 'Podfile'
+      - 'Podfile.lock'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
@@ -34,7 +38,7 @@ jobs:
       - name: Cache Pods
         uses: actions/cache@v3
         with:
-          path: CleanMate/Pods
+          path: Pods
           key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-pods-
@@ -42,14 +46,12 @@ jobs:
       - name: Install Cocoapods
         run: |
           gem install cocoapods
-          cd CleanMate
           pod install
 
       - name: Debug Directory Structure
         run: |
           pwd
           ls -la
-          ls -la CleanMate || echo "No CleanMate directory"
           find . -name "*.xcworkspace" || echo "No workspace found"
           find . -name "exportOptions.plist" || echo "No exportOptions.plist found"
 
@@ -104,8 +106,6 @@ jobs:
           [[ -z "$APPLE_TEAM_ID" ]] && echo "APPLE_TEAM_ID is missing" && exit 1
           [[ -z "$APPLE_ID" ]] && echo "APPLE_ID is missing" && exit 1
           [[ -z "$APPLE_APP_SPECIFIC_PASSWORD" ]] && echo "APPLE_APP_SPECIFIC_PASSWORD is missing" && exit 1
-          
-          cd CleanMate
           
           # Create build directory
           mkdir -p build

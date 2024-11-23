@@ -12,6 +12,9 @@ on:
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-and-deploy:
     name: Build and Deploy
@@ -50,10 +53,20 @@ jobs:
 
       - name: Debug Directory Structure
         run: |
+          echo "Current working directory:"
           pwd
+          echo "\nDirectory contents:"
           ls -la
+          echo "\nWorkspace files:"
           find . -name "*.xcworkspace" || echo "No workspace found"
+          echo "\nXcode project files:"
+          find . -name "*.xcodeproj" || echo "No project found"
+          echo "\nPodfile location:"
+          find . -name "Podfile" || echo "No Podfile found"
+          echo "\nExport options file:"
           find . -name "exportOptions.plist" || echo "No exportOptions.plist found"
+          echo "\nEnvironment:"
+          env | grep -i "xcode\|path\|ruby\|pod"
 
       - name: Set up certificates
         env:
@@ -108,21 +121,21 @@ jobs:
           [[ -z "$APPLE_APP_SPECIFIC_PASSWORD" ]] && echo "APPLE_APP_SPECIFIC_PASSWORD is missing" && exit 1
           
           # Create build directory
-          mkdir -p build
+          mkdir -p ${{ runner.temp }}/build
           
           # Build the app
           echo "Building app..."
           xcodebuild -workspace CleanMate.xcworkspace \
             -scheme CleanMate \
             -configuration Release \
-            -archivePath build/CleanMate.xcarchive \
+            -archivePath ${{ runner.temp }}/build/CleanMate.xcarchive \
             clean archive \
             CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
             | xcpretty
           
           # Verify archive exists
-          if [ ! -d "build/CleanMate.xcarchive" ]; then
+          if [ ! -d "${{ runner.temp }}/build/CleanMate.xcarchive" ]; then
             echo "Archive not found!"
             exit 1
           fi
@@ -130,13 +143,13 @@ jobs:
           # Export the app
           echo "Exporting app..."
           xcodebuild -exportArchive \
-            -archivePath build/CleanMate.xcarchive \
+            -archivePath ${{ runner.temp }}/build/CleanMate.xcarchive \
             -exportOptionsPlist exportOptions.plist \
-            -exportPath build \
+            -exportPath ${{ runner.temp }}/build \
             | xcpretty
           
           # Verify IPA exists
-          if [ ! -f "build/CleanMate.ipa" ]; then
+          if [ ! -f "${{ runner.temp }}/build/CleanMate.ipa" ]; then
             echo "IPA not found!"
             exit 1
           fi
@@ -145,7 +158,7 @@ jobs:
           echo "Uploading to TestFlight..."
           xcrun altool --upload-app \
             --type ios \
-            --file build/CleanMate.ipa \
+            --file ${{ runner.temp }}/build/CleanMate.ipa \
             --username "$APPLE_ID" \
             --password "$APPLE_APP_SPECIFIC_PASSWORD"
 

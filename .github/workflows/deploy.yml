@@ -124,6 +124,12 @@ jobs:
           ruby-version: '3.3.0'
           bundler-cache: true
 
+      - name: Install Dependencies
+        run: |
+          gem install cocoapods
+          gem install xcpretty
+          pod install
+
       - name: Cache Pods
         uses: actions/cache@v3
         with:
@@ -131,11 +137,6 @@ jobs:
           key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-pods-
-
-      - name: Install Cocoapods
-        run: |
-          gem install cocoapods
-          pod install
 
       - name: Import Certificate
         env:
@@ -211,6 +212,7 @@ jobs:
             -scheme CleanMate \
             -configuration Release \
             -archivePath "$BUILD_DIR/CleanMate.xcarchive" \
+            -destination 'generic/platform=iOS' \
             clean archive \
             CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM=$APPLE_TEAM_ID \

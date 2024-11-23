@@ -9,6 +9,9 @@ jobs:
   deploy:
     name: Deploy to TestFlight
     runs-on: macos-latest
+    env:
+      KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
+      KEYCHAIN_PASSWORD: cleanmate123
     
     steps:
       - name: Checkout repository
@@ -29,34 +32,41 @@ jobs:
           pod repo update
           pod install --verbose
 
+      - name: Debug Environment
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Temp directory: ${{ runner.temp }}"
+          echo "Keychain path: $KEYCHAIN_PATH"
+          security list-keychains
+          ls -la CleanMate
+
       - name: Set up certificates
         env:
           CERTIFICATE_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
           CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
-          KEYCHAIN_PASSWORD: cleanmate123
-          KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
         run: |
           # Clean up any existing keychain
-          security delete-keychain $KEYCHAIN_PATH || true
+          security delete-keychain "$KEYCHAIN_PATH" || true
           
           # Create a new keychain
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH || exit 1
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH || exit 1
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH || exit 1
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" || exit 1
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH" || exit 1
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" || exit 1
           
           # Import certificate to keychain
           echo -n "$CERTIFICATE_BASE64" | base64 --decode > /tmp/certificate.p12 || exit 1
-          security import /tmp/certificate.p12 -k $KEYCHAIN_PATH -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign || exit 1
+          security import /tmp/certificate.p12 -k "$KEYCHAIN_PATH" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign || exit 1
+          rm /tmp/certificate.p12
           
           # Add keychain to search list
-          security list-keychains -d user -s $KEYCHAIN_PATH $(security list-keychains -d user | tr -d '"') || exit 1
-          security default-keychain -s $KEYCHAIN_PATH || exit 1
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"') || exit 1
+          security default-keychain -s "$KEYCHAIN_PATH" || exit 1
           
           # Allow codesign to access keychain
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH || exit 1
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" || exit 1
           
           # Verify setup
-          security find-identity -v -p codesigning $KEYCHAIN_PATH || exit 1
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH" || exit 1
 
       - name: Prepare Build Directory
         run: |
@@ -71,6 +81,13 @@ jobs:
         run: |
           cd CleanMate
           
+          # Debug build environment
+          echo "Current directory: $(pwd)"
+          echo "Contents of current directory:"
+          ls -la
+          echo "Xcode version:"
+          xcodebuild -version
+          
           # Build the app
           xcodebuild -workspace CleanMate.xcworkspace -scheme CleanMate -configuration Release -archivePath build/CleanMate.xcarchive clean archive CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=$APPLE_TEAM_ID || exit 1
           
@@ -83,4 +100,4 @@ jobs:
       - name: Cleanup Keychain
         if: always()
         run: |
-          security delete-keychain $KEYCHAIN_PATH || true
+          security delete-keychain "$KEYCHAIN_PATH" || true

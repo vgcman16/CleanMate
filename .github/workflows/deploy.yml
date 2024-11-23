@@ -28,38 +28,22 @@ jobs:
       - name: Cache Pods
         uses: actions/cache@v3
         with:
-          path: CleanMate/Pods
+          path: Pods
           key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-pods-
 
-      - name: Clean Swift Package Manager
-        run: |
-          cd CleanMate
-          rm -rf *.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
-          rm -rf .build/
-
       - name: Install Cocoapods
         run: |
           gem install cocoapods
-          cd CleanMate
           pod install
-
-      - name: Build
-        run: |
-          cd CleanMate
-          xcodebuild clean build \
-            -workspace CleanMate.xcworkspace \
-            -scheme CleanMate \
-            -destination "platform=iOS Simulator,name=iPhone 15 Pro,OS=17.0" \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
 
       - name: Set up certificates
         env:
           CERTIFICATE_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
           CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
+          KEYCHAIN_PASSWORD: cleanmate123
         run: |
           # Clean up any existing keychain
           security delete-keychain "$KEYCHAIN_PATH" || true
@@ -90,11 +74,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
-          KEYCHAIN_PASSWORD: cleanmate123
         run: |
-          cd CleanMate
-          
           # Build the app
           xcodebuild -workspace CleanMate.xcworkspace -scheme CleanMate -configuration Release -archivePath build/CleanMate.xcarchive clean archive CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=$APPLE_TEAM_ID || exit 1
           

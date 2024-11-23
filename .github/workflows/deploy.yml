@@ -141,7 +141,7 @@ jobs:
         env:
           CERTIFICATE_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
           CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
-          KEYCHAIN_PATH: /Users/runner/Library/Keychains/build.keychain
+          KEYCHAIN_PATH: /Users/runner/Library/Keychains/build.keychain-db
         run: |
           # Echo steps for debugging
           echo "Setting up keychain..."
@@ -235,4 +235,4 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          security delete-keychain /Users/runner/Library/Keychains/build.keychain || true
+          security delete-keychain /Users/runner/Library/Keychains/build.keychain-db || true

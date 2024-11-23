@@ -31,7 +31,7 @@ jobs:
       - name: Cache Pods
         uses: actions/cache@v3
         with:
-          path: CleanMate/Pods
+          path: Pods
           key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-pods-
@@ -39,21 +39,22 @@ jobs:
       - name: Install Cocoapods
         run: |
           gem install cocoapods
-          cd CleanMate
           pod install
 
       - name: Debug Directory Structure
         run: |
           pwd
           ls -la
-          ls -la CleanMate || echo "No CleanMate directory"
+          ls -la || echo "No root directory"
           find . -name "*.xcworkspace" || echo "No workspace found"
+          find . -name "exportOptions.plist" || echo "No exportOptions.plist found"
 
       - name: Set up certificates
         env:
           CERTIFICATE_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
           CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
+          # Debug certificate environment
           if [ -z "$CERTIFICATE_BASE64" ]; then
             echo "Error: CERTIFICATE_BASE64 is not set"
             exit 1
@@ -94,16 +95,53 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: |
-          cd CleanMate
+          # Debug environment variables
+          echo "Checking environment variables..."
+          [[ -z "$APPLE_TEAM_ID" ]] && echo "APPLE_TEAM_ID is missing" && exit 1
+          [[ -z "$APPLE_ID" ]] && echo "APPLE_ID is missing" && exit 1
+          [[ -z "$APPLE_APP_SPECIFIC_PASSWORD" ]] && echo "APPLE_APP_SPECIFIC_PASSWORD is missing" && exit 1
+          
+          # Create build directory
+          mkdir -p build
           
           # Build the app
-          xcodebuild -workspace CleanMate.xcworkspace -scheme CleanMate -configuration Release -archivePath build/CleanMate.xcarchive clean archive CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=$APPLE_TEAM_ID
+          echo "Building app..."
+          xcodebuild -workspace CleanMate.xcworkspace \
+            -scheme CleanMate \
+            -configuration Release \
+            -archivePath build/CleanMate.xcarchive \
+            clean archive \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
+            | xcpretty
+          
+          # Verify archive exists
+          if [ ! -d "build/CleanMate.xcarchive" ]; then
+            echo "Archive not found!"
+            exit 1
+          fi
           
           # Export the app
-          xcodebuild -exportArchive -archivePath build/CleanMate.xcarchive -exportOptionsPlist exportOptions.plist -exportPath build
+          echo "Exporting app..."
+          xcodebuild -exportArchive \
+            -archivePath build/CleanMate.xcarchive \
+            -exportOptionsPlist exportOptions.plist \
+            -exportPath build \
+            | xcpretty
+          
+          # Verify IPA exists
+          if [ ! -f "build/CleanMate.ipa" ]; then
+            echo "IPA not found!"
+            exit 1
+          fi
           
           # Upload to TestFlight
-          xcrun altool --upload-app --type ios --file build/CleanMate.ipa --username "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD"
+          echo "Uploading to TestFlight..."
+          xcrun altool --upload-app \
+            --type ios \
+            --file build/CleanMate.ipa \
+            --username "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD"
 
       - name: Cleanup Keychain
         if: always()

@@ -3,6 +3,9 @@ name: Deploy to TestFlight
 on:
   push:
     branches: [main]
+    paths:
+      - 'CleanMate/**'
+      - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
 jobs:

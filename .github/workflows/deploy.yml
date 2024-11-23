@@ -24,9 +24,17 @@ jobs:
         env:
           LANG: en_US.UTF-8
         run: |
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
           gem install cocoapods
           pod repo update
-          pod install
+          pod install --verbose
+
+      - name: Debug Project Structure
+        run: |
+          echo "Project structure:"
+          ls -R
 
       - name: Set up certificates
         env:

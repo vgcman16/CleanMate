@@ -17,7 +17,7 @@ permissions: write-all
 jobs:
   build-and-deploy:
     name: Build and Deploy
-    runs-on: macos-latest
+    runs-on: macos-15
     env:
       KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
       KEYCHAIN_PASSWORD: cleanmate123

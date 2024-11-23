@@ -1,0 +1,57 @@
+name: CleanMate
+options:
+  bundleIdPrefix: com.cleanmate
+  deploymentTarget:
+    iOS: 18.1
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk.git
+    from: 10.17.0
+targets:
+  CleanMate:
+    type: application
+    platform: iOS
+    sources:
+      - path: CleanMate
+      - path: Views
+      - path: Config
+      - path: Assets.xcassets
+    settings:
+      base:
+        INFOPLIST_FILE: CleanMate/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.cleanmate.CleanMate
+    info:
+      path: CleanMate/Info.plist
+      properties:
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchStoryboardName: LaunchScreen
+        UIMainStoryboardFile: Main
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIRequiresFullScreen: true
+    dependencies:
+      - package: Firebase
+        product: FirebaseCore
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseFirestore
+      - package: Firebase
+        product: FirebaseStorage
+      - package: Firebase
+        product: FirebaseMessaging
+  CleanMateTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: CleanMateTests
+    dependencies:
+      - target: CleanMate
+  CleanMateUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: CleanMateUITests
+    dependencies:
+      - target: CleanMate

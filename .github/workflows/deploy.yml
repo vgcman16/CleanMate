@@ -19,9 +19,7 @@ jobs:
     name: Build and Deploy
     runs-on: macos-15
     env:
-      KEYCHAIN_NAME: app-signing.keychain-db
-      KEYCHAIN_PATH: /Users/runner/Library/Keychains/app-signing.keychain-db
-      KEYCHAIN_PASSWORD: temporaryPassword123
+      KEYCHAIN_PATH: ~/Library/Keychains/signing_temp.keychain-db
 
     steps:
       - name: Checkout repository
@@ -72,62 +70,40 @@ jobs:
           gem install cocoapods
           pod install
 
-      - name: Set up certificates
+      - name: Setup Keychain
         env:
           CERTIFICATE_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
           CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
-          KEYCHAIN_PASSWORD: ${{ env.KEYCHAIN_PASSWORD }}
         run: |
-          # Debug certificate environment
-          if [ -z "$CERTIFICATE_BASE64" ]; then
-            echo "Error: CERTIFICATE_BASE64 is not set"
-            exit 1
-          fi
+          # Create variables
+          KEYCHAIN_PASSWORD="temp_password"
           
-          if [ -z "$CERTIFICATE_PASSWORD" ]; then
-            echo "Error: CERTIFICATE_PASSWORD is not set"
-            exit 1
-          fi
+          # Delete old keychain if exists
+          security delete-keychain $KEYCHAIN_PATH || true
           
-          # Clean up any existing keychain
-          security delete-keychain "$KEYCHAIN_PATH" || true
-          rm -f "$KEYCHAIN_PATH" || true
+          # Create keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security default-keychain -s $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -t 3600 -u $KEYCHAIN_PATH
           
-          # Create a new keychain
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
-          security set-keychain-settings -t 3600 -l "$KEYCHAIN_NAME"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
+          # Import certificate
+          echo $CERTIFICATE_BASE64 | base64 --decode > /tmp/certificate.p12
+          security import /tmp/certificate.p12 -k $KEYCHAIN_PATH -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          rm /tmp/certificate.p12
           
-          # Import certificate to keychain
-          echo -n "$CERTIFICATE_BASE64" | base64 --decode > /tmp/certificate.p12
-          security import /tmp/certificate.p12 -k "$KEYCHAIN_NAME" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign -A
-          rm -f /tmp/certificate.p12
+          # Set partition list
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           
-          # Add keychain to search list and set as default
-          security list-keychains -d user -s "$KEYCHAIN_NAME" $(security list-keychains -d user | tr -d '"')
-          security default-keychain -s "$KEYCHAIN_NAME"
-          
-          # Partition list and allow codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
-          
-          # Debug: List identities
-          security find-identity -v -p codesigning "$KEYCHAIN_NAME"
-          security list-keychains
-          security show-keychain-info "$KEYCHAIN_NAME"
+          # List certificates
+          security find-identity -v -p codesigning $KEYCHAIN_PATH
 
       - name: Build and Deploy
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: |
-          # Debug environment variables
-          echo "Checking environment variables..."
-          [[ -z "$APPLE_TEAM_ID" ]] && echo "APPLE_TEAM_ID is missing" && exit 1
-          [[ -z "$APPLE_ID" ]] && echo "APPLE_ID is missing" && exit 1
-          [[ -z "$APPLE_APP_SPECIFIC_PASSWORD" ]] && echo "APPLE_APP_SPECIFIC_PASSWORD is missing" && exit 1
-          
           # Create build directory
           BUILD_DIR="${GITHUB_WORKSPACE}/build"
           mkdir -p "$BUILD_DIR"
@@ -171,8 +147,7 @@ jobs:
             --username "$APPLE_ID" \
             --password "$APPLE_APP_SPECIFIC_PASSWORD"
 
-      - name: Cleanup Keychain
+      - name: Cleanup
         if: always()
         run: |
-          security delete-keychain "$KEYCHAIN_NAME" || true
-          rm -f "$KEYCHAIN_PATH" || true
+          security delete-keychain $KEYCHAIN_PATH || true

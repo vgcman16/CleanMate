@@ -20,24 +20,11 @@ jobs:
           ruby-version: '3.3.0'
           bundler-cache: true
 
-      - name: Debug Project Structure
-        run: |
-          echo "Root directory:"
-          pwd
-          echo "\nRoot contents:"
-          ls -la
-          echo "\nCleanMate directory contents:"
-          ls -la CleanMate
-          echo "\nVerifying Xcode project:"
-          test -d "CleanMate/CleanMate.xcodeproj" && echo "✅ Xcode project found" || echo "❌ Xcode project not found"
-
       - name: Install Cocoapods
         env:
           LANG: en_US.UTF-8
         run: |
-          echo "Current directory: $(pwd)"
-          echo "Directory contents:"
-          ls -la
+          cd CleanMate
           gem install cocoapods
           pod repo update
           pod install --verbose
@@ -53,23 +40,27 @@ jobs:
           security delete-keychain $KEYCHAIN_PATH || true
           
           # Create a new keychain
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH || exit 1
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH || exit 1
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH || exit 1
           
           # Import certificate to keychain
-          echo -n "$CERTIFICATE_BASE64" | base64 --decode > /tmp/certificate.p12
-          security import /tmp/certificate.p12 -k $KEYCHAIN_PATH -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          echo -n "$CERTIFICATE_BASE64" | base64 --decode > /tmp/certificate.p12 || exit 1
+          security import /tmp/certificate.p12 -k $KEYCHAIN_PATH -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign || exit 1
           
           # Add keychain to search list
-          security list-keychains -d user -s $KEYCHAIN_PATH $(security list-keychains -d user | tr -d '"')
-          security default-keychain -s $KEYCHAIN_PATH
+          security list-keychains -d user -s $KEYCHAIN_PATH $(security list-keychains -d user | tr -d '"') || exit 1
+          security default-keychain -s $KEYCHAIN_PATH || exit 1
           
           # Allow codesign to access keychain
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH || exit 1
           
           # Verify setup
-          security find-identity -v -p codesigning $KEYCHAIN_PATH
+          security find-identity -v -p codesigning $KEYCHAIN_PATH || exit 1
+
+      - name: Prepare Build Directory
+        run: |
+          mkdir -p CleanMate/build
 
       - name: Build and Deploy
         env:
@@ -78,14 +69,16 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: |
+          cd CleanMate
+          
           # Build the app
-          xcodebuild -workspace CleanMate.xcworkspace -scheme CleanMate -configuration Release -archivePath $PWD/build/CleanMate.xcarchive clean archive
+          xcodebuild -workspace CleanMate.xcworkspace -scheme CleanMate -configuration Release -archivePath build/CleanMate.xcarchive clean archive CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=$APPLE_TEAM_ID || exit 1
           
           # Export the app
-          xcodebuild -exportArchive -archivePath $PWD/build/CleanMate.xcarchive -exportOptionsPlist exportOptions.plist -exportPath $PWD/build
+          xcodebuild -exportArchive -archivePath build/CleanMate.xcarchive -exportOptionsPlist exportOptions.plist -exportPath build || exit 1
           
           # Upload to TestFlight
-          xcrun altool --upload-app --type ios --file $PWD/build/CleanMate.ipa --username "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD"
+          xcrun altool --upload-app --type ios --file build/CleanMate.ipa --username "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" || exit 1
 
       - name: Cleanup Keychain
         if: always()

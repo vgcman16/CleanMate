@@ -10,7 +10,7 @@
     <string>manual</string>
     <key>provisioningProfiles</key>
     <dict>
-        <key>com.vgcman.cleanmate</key>
+        <key>com.cleanmate.CleanMate</key>
         <string>CleanMate Development Profile</string>
     </dict>
     <key>signingCertificate</key>

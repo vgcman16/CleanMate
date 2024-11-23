@@ -21,8 +21,11 @@ jobs:
           bundler-cache: true
 
       - name: Install Cocoapods
+        env:
+          LANG: en_US.UTF-8
         run: |
           gem install cocoapods
+          pod repo update
           pod install
 
       - name: Set up certificates

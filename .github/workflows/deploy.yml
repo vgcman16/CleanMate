@@ -9,6 +9,9 @@ jobs:
   build-and-deploy:
     name: Build and Deploy
     runs-on: macos-latest
+    env:
+      KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
+      KEYCHAIN_PASSWORD: cleanmate123
     
     steps:
       - name: Checkout repository
@@ -28,7 +31,7 @@ jobs:
       - name: Cache Pods
         uses: actions/cache@v3
         with:
-          path: Pods
+          path: CleanMate/Pods
           key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-pods-
@@ -36,37 +39,53 @@ jobs:
       - name: Install Cocoapods
         run: |
           gem install cocoapods
+          cd CleanMate
           pod install
+
+      - name: Debug Directory Structure
+        run: |
+          pwd
+          ls -la
+          ls -la CleanMate || echo "No CleanMate directory"
+          find . -name "*.xcworkspace" || echo "No workspace found"
 
       - name: Set up certificates
         env:
           CERTIFICATE_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
           CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
-          KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
-          KEYCHAIN_PASSWORD: cleanmate123
         run: |
+          if [ -z "$CERTIFICATE_BASE64" ]; then
+            echo "Error: CERTIFICATE_BASE64 is not set"
+            exit 1
+          fi
+          
+          if [ -z "$CERTIFICATE_PASSWORD" ]; then
+            echo "Error: CERTIFICATE_PASSWORD is not set"
+            exit 1
+          fi
+          
           # Clean up any existing keychain
           security delete-keychain "$KEYCHAIN_PATH" || true
           
           # Create a new keychain
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" || exit 1
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH" || exit 1
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" || exit 1
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           
           # Import certificate to keychain
-          echo -n "$CERTIFICATE_BASE64" | base64 --decode > /tmp/certificate.p12 || exit 1
-          security import /tmp/certificate.p12 -k "$KEYCHAIN_PATH" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign || exit 1
+          echo "$CERTIFICATE_BASE64" | base64 --decode > /tmp/certificate.p12
+          security import /tmp/certificate.p12 -k "$KEYCHAIN_PATH" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           rm /tmp/certificate.p12
           
           # Add keychain to search list
-          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"') || exit 1
-          security default-keychain -s "$KEYCHAIN_PATH" || exit 1
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+          security default-keychain -s "$KEYCHAIN_PATH"
           
           # Allow codesign to access keychain
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" || exit 1
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           
           # Verify setup
-          security find-identity -v -p codesigning "$KEYCHAIN_PATH" || exit 1
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
 
       - name: Build and Deploy
         env:
@@ -75,14 +94,16 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: |
+          cd CleanMate
+          
           # Build the app
-          xcodebuild -workspace CleanMate.xcworkspace -scheme CleanMate -configuration Release -archivePath build/CleanMate.xcarchive clean archive CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=$APPLE_TEAM_ID || exit 1
+          xcodebuild -workspace CleanMate.xcworkspace -scheme CleanMate -configuration Release -archivePath build/CleanMate.xcarchive clean archive CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=$APPLE_TEAM_ID
           
           # Export the app
-          xcodebuild -exportArchive -archivePath build/CleanMate.xcarchive -exportOptionsPlist exportOptions.plist -exportPath build || exit 1
+          xcodebuild -exportArchive -archivePath build/CleanMate.xcarchive -exportOptionsPlist exportOptions.plist -exportPath build
           
           # Upload to TestFlight
-          xcrun altool --upload-app --type ios --file build/CleanMate.ipa --username "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" || exit 1
+          xcrun altool --upload-app --type ios --file build/CleanMate.ipa --username "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD"
 
       - name: Cleanup Keychain
         if: always()

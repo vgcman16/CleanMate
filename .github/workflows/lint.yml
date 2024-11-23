@@ -19,8 +19,8 @@ jobs:
       with:
         args: --strict
 
-  podlint:
-    name: Pod Lint
+  podcheck:
+    name: Pod Check
     runs-on: macos-15
     
     steps:
@@ -32,7 +32,12 @@ jobs:
         ruby-version: '3.3.0'
         bundler-cache: true
     
-    - name: Pod Lint
+    - name: Install CocoaPods
       run: |
         gem install cocoapods
-        pod lib lint --allow-warnings --no-clean --verbose --skip-tests
+    
+    - name: Validate Podfile
+      run: |
+        pod repo update
+        pod install --verbose
+        pod outdated

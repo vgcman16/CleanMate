@@ -1,4 +1,4 @@
-project 'CleanMate.xcodeproj'
+project 'CleanMate/CleanMate.xcodeproj'
 
 platform :ios, '18.1'
 

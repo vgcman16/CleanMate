@@ -17,14 +17,14 @@ permissions: write-all
 jobs:
   build-and-deploy:
     name: Build and Deploy
-    runs-on: macos-15
+    runs-on: macos-14
     env:
       KEYCHAIN_PATH: /tmp/app-signing.keychain-db
       KEYCHAIN_PASSWORD: cleanmate123
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Debug Info
         run: |
@@ -42,11 +42,13 @@ jobs:
           find . -name "exportOptions.plist" || echo "No exportOptions.plist found"
           echo "\nEnvironment:"
           env | grep -i "xcode\|path\|ruby\|pod"
+          echo "\nAvailable Xcode versions:"
+          ls -l /Applications/ | grep "Xcode"
 
       - name: Select Xcode Version
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '15.0'
+          xcode-version: '15.2'
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1

@@ -2,50 +2,55 @@ project 'CleanMate/CleanMate.xcodeproj'
 
 platform :ios, '18.1'
 
-target 'CleanMate' do
-  use_frameworks!
+# Add this at the top level to prevent duplicate frameworks
+install! 'cocoapods',
+         :deterministic_uuids => false,
+         :disable_input_output_paths => true
 
-  # Firebase - using specific versions known to be compatible
+# Add the Firebase pod for Google Analytics
+use_frameworks! :linkage => :static
+
+def shared_pods
   pod 'Firebase/Core', '10.17.0'
   pod 'Firebase/Auth', '10.17.0'
   pod 'Firebase/Firestore', '10.17.0'
   pod 'Firebase/Storage', '10.17.0'
   pod 'Firebase/Messaging', '10.17.0'
-  pod 'FirebaseStorage', '10.17.0'  # Explicit version
-  
-  # Payment
-  pod 'Stripe', '~> 23.18.0'  # Last version before 24.x
-
-  # UI
-  pod 'SDWebImage', '~> 5.18.0'  # Last version before 5.20
-  pod 'IQKeyboardManagerSwift', '~> 6.5.0'  # More stable version
-
+  pod 'Stripe', '~> 23.18.0'
+  pod 'SDWebImage', '~> 5.18.0'
+  pod 'IQKeyboardManagerSwift', '~> 6.5.0'
 end
 
-post_install do |installer|
-  installer.pods_project.targets.each do |target|
-    target.build_configurations.each do |config|
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '18.1'
-      
-      # Fix for 'Create Symlinks to Header Folders' warning
-      if target.respond_to?(:product_type) and target.product_type == "com.apple.product-type.framework"
+target 'CleanMate' do
+  shared_pods
+  
+  # Configuration to prevent duplicate frameworks
+  post_install do |installer|
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+        config.build_settings['ENABLE_BITCODE'] = 'NO'
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '18.1'
+      end
+    end
+    
+    # Fix for duplicate frameworks
+    installer.aggregate_targets.each do |aggregate_target|
+      aggregate_target.xcconfigs.each do |config_name, config_file|
+        config_file.frameworks.clear
+        config_file.weak_frameworks.clear
+        config_file.libraries.clear
+      end
+    end
+    
+    installer.pods_project.targets.each do |target|
+      if ['gRPC-Core', 'gRPC-C++', 'BoringSSL-GRPC', 'abseil', 'FirebaseFirestoreInternal'].include? target.name
         target.build_configurations.each do |config|
-          config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+          config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+          config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+          config.build_settings['ENABLE_BITCODE'] = 'NO'
         end
       end
-      
-      # Additional build settings
-      config.build_settings.delete 'IPHONEOS_DEPLOYMENT_TARGET'
-      config.build_settings['DEAD_CODE_STRIPPING'] = 'YES'
-      config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
-      config.build_settings['ENABLE_BITCODE'] = 'NO'
-      
-      # Swift compiler flags
-      config.build_settings['OTHER_SWIFT_FLAGS'] ||= ['$(inherited)', '-Xfrontend -warn-long-expression-type-checking=100']
-      
-      # Suppress warnings
-      config.build_settings['SWIFT_SUPPRESS_WARNINGS'] = 'YES'
-      config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
     end
   end
 end

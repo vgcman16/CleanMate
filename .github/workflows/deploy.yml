@@ -34,13 +34,18 @@ jobs:
           ruby-version: '3.3.0'
 
       - name: Install CocoaPods
+        env:
+          LANG: en_US.UTF-8
+          LANGUAGE: en_US:en
+          LC_ALL: en_US.UTF-8
         run: |
           gem install cocoapods
           gem install xcpretty
-
+          pod install
+        
       - name: Install Dependencies
         run: |
-          pod install
+          # No-op, moved to Install CocoaPods step
         
       - name: Cache Pods
         uses: actions/cache@v3

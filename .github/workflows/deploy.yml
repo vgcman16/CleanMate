@@ -46,32 +46,48 @@ jobs:
         env:
           CERTIFICATE_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
           CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
-          KEYCHAIN_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: cleanmate123
+          KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
         run: |
-          # Delete keychain if it exists
-          security delete-keychain build.keychain || true
+          # Clean up any existing keychain
+          security delete-keychain $KEYCHAIN_PATH || true
           
-          # Create keychain
-          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
-          security set-keychain-settings -t 3600 -l ~/Library/Keychains/build.keychain
+          # Create a new keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          
+          # Import certificate to keychain
+          echo -n "$CERTIFICATE_BASE64" | base64 --decode > /tmp/certificate.p12
+          security import /tmp/certificate.p12 -k $KEYCHAIN_PATH -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          
+          # Add keychain to search list
+          security list-keychains -d user -s $KEYCHAIN_PATH $(security list-keychains -d user | tr -d '"')
+          security default-keychain -s $KEYCHAIN_PATH
+          
+          # Allow codesign to access keychain
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          
+          # Verify setup
+          security find-identity -v -p codesigning $KEYCHAIN_PATH
 
-          # Import certificate
-          echo $CERTIFICATE_BASE64 | base64 --decode > certificate.p12
-          security import certificate.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
-
-      - name: Deploy to TestFlight
+      - name: Build and Deploy
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          MATCH_KEYCHAIN_NAME: build.keychain
-          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
-        run: bundle exec fastlane beta
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        run: |
+          # Build the app
+          xcodebuild -workspace CleanMate.xcworkspace -scheme CleanMate -configuration Release -archivePath $PWD/build/CleanMate.xcarchive clean archive
+          
+          # Export the app
+          xcodebuild -exportArchive -archivePath $PWD/build/CleanMate.xcarchive -exportOptionsPlist exportOptions.plist -exportPath $PWD/build
+          
+          # Upload to TestFlight
+          xcrun altool --upload-app --type ios --file $PWD/build/CleanMate.ipa --username "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD"
 
       - name: Cleanup Keychain
         if: always()
         run: |
-          security delete-keychain build.keychain || true
+          security delete-keychain $KEYCHAIN_PATH || true

@@ -1,5 +1,7 @@
 import XCTest
-@testable import CleanMate
+
+@testable
+import CleanMate
 
 @MainActor
 final class SignUpViewModelTests: XCTestCase {

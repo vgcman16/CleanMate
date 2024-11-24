@@ -1,8 +1,11 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject private var appState: AppState
-    @EnvironmentObject private var authService: AuthenticationService
+    @EnvironmentObject
+    private var appState: AppState
+    
+    @EnvironmentObject
+    private var authService: AuthenticationService
     
     var body: some View {
         Group {
@@ -39,17 +42,12 @@ struct ContentView: View {
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
-            .environmentObject(AppState.shared)
-            .environmentObject(AuthenticationService.shared)
-    }
-}
-
 struct ProfileView: View {
-    @EnvironmentObject private var authService: AuthenticationService
-    @State private var showingLogoutAlert = false
+    @EnvironmentObject
+    private var authService: AuthenticationService
+    
+    @State
+    private var showingLogoutAlert = false
     
     var body: some View {
         NavigationView {
@@ -101,5 +99,13 @@ struct ProfileView: View {
                 Text("Are you sure you want to sign out?")
             }
         }
+    }
+}
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+            .environmentObject(AppState.shared)
+            .environmentObject(AuthenticationService.shared)
     }
 }

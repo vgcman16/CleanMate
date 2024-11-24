@@ -5,7 +5,8 @@ import IQKeyboardManagerSwift
 
 @main
 struct CleanMateApp: App {
-    @StateObject private var appState = AppState()
+    @StateObject
+    private var appState = AppState()
     
     @UIApplicationDelegateAdaptor(AppDelegate.self)
     private var delegate

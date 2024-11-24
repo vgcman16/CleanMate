@@ -8,6 +8,8 @@ class AppState: ObservableObject {
     
     static let shared = AppState()
     
+    private init() {}
+    
     enum Tab {
         case home
         case bookings

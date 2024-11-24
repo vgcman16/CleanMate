@@ -1,10 +1,7 @@
 import XCTest
+@testable import CleanMate
 
-@testable
-import CleanMate
-
-@MainActor
-final class SignInViewModelTests: XCTestCase {
+@MainActor final class SignInViewModelTests: XCTestCase {
     var sut: SignInViewModel!
     var mockAuthService: MockAuthenticationService!
     

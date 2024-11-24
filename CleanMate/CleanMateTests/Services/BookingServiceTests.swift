@@ -1,10 +1,7 @@
 import XCTest
+@testable import CleanMate
 
-@testable
-import CleanMate
-
-@MainActor
-final class BookingServiceTests: XCTestCase {
+@MainActor final class BookingServiceTests: XCTestCase {
     var sut: BookingService!
     
     override func setUp() {

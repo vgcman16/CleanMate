@@ -1,10 +1,7 @@
 import XCTest
+@testable import CleanMate
 
-@testable
-import CleanMate
-
-@MainActor
-final class AuthenticationServiceTests: XCTestCase {
+@MainActor final class AuthenticationServiceTests: XCTestCase {
     var sut: AuthenticationService!
     
     override func setUp() {

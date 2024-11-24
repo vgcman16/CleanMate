@@ -1,11 +1,8 @@
 import XCTest
 import FirebaseAuth
+@testable import CleanMate
 
-@testable
-import CleanMate
-
-@MainActor
-class MockAuthenticationService: AuthenticationService {
+@MainActor class MockAuthenticationService: AuthenticationService {
     var signInCalled = false
     var signUpCalled = false
     var signOutCalled = false
@@ -46,8 +43,7 @@ class MockAuthenticationService: AuthenticationService {
     }
 }
 
-@MainActor
-class MockBookingService: BookingService {
+@MainActor class MockBookingService: BookingService {
     var createBookingCalled = false
     var getBookingsCalled = false
     var cancelBookingCalled = false

@@ -1,11 +1,8 @@
 import SwiftUI
 
 struct SignUpView: View {
-    @StateObject
-    private var viewModel = SignUpViewModel()
-    
-    @Environment(\.dismiss)
-    private var dismiss
+    @StateObject private var viewModel = SignUpViewModel()
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationView {

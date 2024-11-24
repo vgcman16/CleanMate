@@ -1,82 +1,46 @@
-import SwiftUI
 import Combine
+import FirebaseAuth
+import SwiftUI
 
 struct SignInView: View {
     @StateObject private var viewModel = SignInViewModel()
-    @EnvironmentObject private var appState: AppState
+    @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
-                // Logo and Welcome Text
-                Image("AppLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 120, height: 120)
-                
-                Text("Welcome Back!")
-                    .font(.title)
-                    .fontWeight(.bold)
-                
-                // Input Fields
-                VStack(spacing: 15) {
-                    CustomTextField(text: $viewModel.email,
-                                 placeholder: "Email",
-                                 icon: "envelope.fill")
+            Form {
+                Section {
+                    TextField("Email", text: $viewModel.email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
                     
-                    CustomSecureField(text: $viewModel.password,
-                                    placeholder: "Password",
-                                    icon: "lock.fill")
+                    SecureField("Password", text: $viewModel.password)
                         .textContentType(.password)
+                } header: {
+                    Text("Sign In")
                 }
-                .padding(.horizontal)
                 
-                // Forgot Password
-                Button("Forgot Password?") {
-                    viewModel.forgotPassword()
-                }
-                .foregroundColor(.blue)
-                .padding(.top, 5)
-                
-                // Sign In Button
-                Button(action: {
-                    Task {
-                        await viewModel.signIn()
-                    }
-                }) {
+                Button(action: { Task { await viewModel.signIn() } }) {
                     if viewModel.isLoading {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .progressViewStyle(CircularProgressViewStyle())
                     } else {
                         Text("Sign In")
-                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity)
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
-                .padding(.horizontal)
-                .disabled(viewModel.isLoading)
-                
-                // Sign Up Link
-                HStack {
-                    Text("Don't have an account?")
-                    NavigationLink("Sign Up", destination: SignUpView())
-                }
-                .padding(.top)
-                
-                Spacer()
+                .disabled(!viewModel.isValid || viewModel.isLoading)
             }
-            .padding()
-            .alert("Error", isPresented: $viewModel.showError) {
-                Button("OK", role: .cancel) {}
+            .navigationTitle("Sign In")
+            .navigationBarTitleDisplayMode(.inline)
+            .alert(
+                "Error",
+                isPresented: $viewModel.showError
+            ) {
+                Button("OK", role: .cancel) { }
             } message: {
-                Text(viewModel.errorMessage)
+                Text(viewModel.errorMessage ?? "An error occurred")
             }
         }
     }
@@ -87,12 +51,16 @@ class SignInViewModel: ObservableObject {
     @Published var password = ""
     @Published var isLoading = false
     @Published var showError = false
-    @Published var errorMessage = ""
+    @Published var errorMessage: String?
     
     private var cancellables = Set<AnyCancellable>()
     
+    var isValid: Bool {
+        !email.isEmpty && !password.isEmpty
+    }
+    
     func signIn() async {
-        guard !email.isEmpty && !password.isEmpty else {
+        guard isValid else {
             showError(message: "Please fill in all fields")
             return
         }

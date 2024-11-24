@@ -1,6 +1,5 @@
-import SwiftUI
-import MapKit
 import Combine
+import SwiftUI
 
 struct BookingView: View {
     let service: CleaningService

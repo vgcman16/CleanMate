@@ -2,7 +2,9 @@ import Foundation
 import FirebaseFirestoreSwift
 
 struct CleaningService: Identifiable, Codable {
-    @DocumentID var id: String?
+    @DocumentID
+    var id: String?
+    
     let name: String
     let description: String
     let basePrice: Double
@@ -29,7 +31,9 @@ struct CleaningService: Identifiable, Codable {
 }
 
 struct Booking: Identifiable, Codable {
-    @DocumentID var id: String?
+    @DocumentID
+    var id: String?
+    
     let userId: String
     let serviceId: String
     let scheduledDate: Date

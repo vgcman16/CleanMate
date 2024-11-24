@@ -946,14 +946,12 @@ PODS:
     - abseil/meta/type_traits
     - abseil/xcprivacy
   - abseil/xcprivacy (1.20240116.2)
-  - Analytics (4.1.8)
   - BoringSSL-GRPC (0.0.32):
     - BoringSSL-GRPC/Implementation (= 0.0.32)
     - BoringSSL-GRPC/Interface (= 0.0.32)
   - BoringSSL-GRPC/Implementation (0.0.32):
     - BoringSSL-GRPC/Interface (= 0.0.32)
   - BoringSSL-GRPC/Interface (0.0.32)
-  - CalendarKit (1.1.11)
   - Firebase/Auth (10.29.0):
     - Firebase/CoreOnly
     - FirebaseAuth (~> 10.29.0)
@@ -1048,7 +1046,6 @@ PODS:
     - FirebaseCoreExtension (~> 10.0)
     - GoogleUtilities/Environment (~> 7.12)
     - GTMSessionFetcher/Core (< 4.0, >= 2.1)
-  - FSCalendar (2.8.4)
   - GoogleAppMeasurement (10.29.0):
     - GoogleAppMeasurement/AdIdSupport (= 10.29.0)
     - GoogleUtilities/AppDelegateSwizzler (~> 7.11)
@@ -1181,83 +1178,29 @@ PODS:
   - gRPC-Core/Privacy (1.62.5)
   - GTMSessionFetcher/Core (3.5.0)
   - IQKeyboardManagerSwift (6.5.16)
-  - KeychainSwift (20.0.0)
   - leveldb-library (1.22.6)
-  - lottie-ios (4.4.3)
   - nanopb (2.30910.0):
     - nanopb/decode (= 2.30910.0)
     - nanopb/encode (= 2.30910.0)
   - nanopb/decode (2.30910.0)
   - nanopb/encode (2.30910.0)
-  - PhoneNumberKit (3.7.11):
-    - PhoneNumberKit/PhoneNumberKitCore (= 3.7.11)
-    - PhoneNumberKit/UIKit (= 3.7.11)
-  - PhoneNumberKit/PhoneNumberKitCore (3.7.11)
-  - PhoneNumberKit/UIKit (3.7.11):
-    - PhoneNumberKit/PhoneNumberKitCore
   - PromisesObjC (2.4.0)
   - RecaptchaInterop (100.0.0)
-  - SDWebImage (5.18.12):
-    - SDWebImage/Core (= 5.18.12)
-  - SDWebImage/Core (5.18.12)
-  - SkeletonView (1.30.4)
-  - Stripe (23.18.3):
-    - StripeApplePay (= 23.18.3)
-    - StripeCore (= 23.18.3)
-    - StripePayments (= 23.18.3)
-    - StripePaymentsUI (= 23.18.3)
-    - StripeUICore (= 23.18.3)
-  - StripeApplePay (23.18.3):
-    - StripeCore (= 23.18.3)
-  - StripeCore (23.18.3)
-  - StripePayments (23.18.3):
-    - StripeCore (= 23.18.3)
-    - StripePayments/Stripe3DS2 (= 23.18.3)
-  - StripePayments/Stripe3DS2 (23.18.3):
-    - StripeCore (= 23.18.3)
-  - StripePaymentSheet (23.18.3):
-    - StripeApplePay (= 23.18.3)
-    - StripeCore (= 23.18.3)
-    - StripePayments (= 23.18.3)
-    - StripePaymentsUI (= 23.18.3)
-  - StripePaymentsUI (23.18.3):
-    - StripeCore (= 23.18.3)
-    - StripePayments (= 23.18.3)
-    - StripeUICore (= 23.18.3)
-  - StripeUICore (23.18.3):
-    - StripeCore (= 23.18.3)
-  - SwiftDate (7.0.0)
-  - SwiftMessages (9.0.9):
-    - SwiftMessages/App (= 9.0.9)
-  - SwiftMessages/App (9.0.9)
+  - SwiftLint (0.57.0)
 
 DEPENDENCIES:
-  - Analytics (~> 4.1.0)
-  - CalendarKit (~> 1.1.9)
-  - Firebase/Auth (~> 10.29.0)
-  - Firebase/Core (~> 10.29.0)
-  - Firebase/Firestore (~> 10.29.0)
-  - Firebase/Messaging (~> 10.29.0)
-  - Firebase/Storage (~> 10.29.0)
-  - FSCalendar (~> 2.8.4)
-  - IQKeyboardManagerSwift (~> 6.5.0)
-  - KeychainSwift (~> 20.0.0)
-  - lottie-ios (~> 4.4.0)
-  - PhoneNumberKit (~> 3.7.0)
-  - SDWebImage (~> 5.18.0)
-  - SkeletonView (~> 1.30.0)
-  - Stripe (~> 23.18.0)
-  - StripeApplePay (~> 23.18.0)
-  - StripePaymentSheet (~> 23.18.0)
-  - SwiftDate (~> 7.0.0)
-  - SwiftMessages (~> 9.0.0)
+  - Firebase/Auth
+  - Firebase/Core
+  - Firebase/Firestore
+  - Firebase/Messaging
+  - Firebase/Storage
+  - IQKeyboardManagerSwift
+  - SwiftLint
 
 SPEC REPOS:
   trunk:
     - abseil
-    - Analytics
     - BoringSSL-GRPC
-    - CalendarKit
     - Firebase
     - FirebaseAnalytics
     - FirebaseAppCheckInterop
@@ -1272,7 +1215,6 @@ SPEC REPOS:
     - FirebaseMessaging
     - FirebaseSharedSwift
     - FirebaseStorage
-    - FSCalendar
     - GoogleAppMeasurement
     - GoogleDataTransport
     - GoogleUtilities
@@ -1280,30 +1222,15 @@ SPEC REPOS:
     - gRPC-Core
     - GTMSessionFetcher
     - IQKeyboardManagerSwift
-    - KeychainSwift
     - leveldb-library
-    - lottie-ios
     - nanopb
-    - PhoneNumberKit
     - PromisesObjC
     - RecaptchaInterop
-    - SDWebImage
-    - SkeletonView
-    - Stripe
-    - StripeApplePay
-    - StripeCore
-    - StripePayments
-    - StripePaymentSheet
-    - StripePaymentsUI
-    - StripeUICore
-    - SwiftDate
-    - SwiftMessages
+    - SwiftLint
 
 SPEC CHECKSUMS:
   abseil: d121da9ef7e2ff4cab7666e76c5a3e0915ae08c3
-  Analytics: 9655e0e1c71ea98107cfcb2b14891168acc6c6c9
   BoringSSL-GRPC: 1e2348957acdbcad360b80a264a90799984b2ba6
-  CalendarKit: 58acabf0a81e010bacfee6eee0d3459d1df0e819
   Firebase: cec914dab6fd7b1bd8ab56ea07ce4e03dd251c2d
   FirebaseAnalytics: 23717de130b779aa506e757edb9713d24b6ffeda
   FirebaseAppCheckInterop: 6a1757cfd4067d8e00fccd14fcc1b8fd78cfac07
@@ -1318,7 +1245,6 @@ SPEC CHECKSUMS:
   FirebaseMessaging: 7b5d8033e183ab59eb5b852a53201559e976d366
   FirebaseSharedSwift: 20530f495084b8d840f78a100d8c5ee613375f6e
   FirebaseStorage: 436c30aa46f2177ba152f268fe4452118b8a4856
-  FSCalendar: 2d1d0d9398f12d439f55c1fe0f01525b151b8260
   GoogleAppMeasurement: f9de05ee17401e3355f68e8fc8b5064d429f5918
   GoogleDataTransport: 6c09b596d841063d76d4288cc2d2f42cc36e1e2a
   GoogleUtilities: ea963c370a38a8069cc5f7ba4ca849a60b6d7d15
@@ -1326,25 +1252,12 @@ SPEC CHECKSUMS:
   gRPC-Core: eee4be35df218649fe66d721a05a7f27a28f069b
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
   IQKeyboardManagerSwift: 12d89768845bb77b55cc092ecc2b1f9370f06b76
-  KeychainSwift: 0ce6a4d13f7228054d1a71bb1b500448fb2ab837
   leveldb-library: cc8b8f8e013647a295ad3f8cd2ddf49a6f19be19
-  lottie-ios: fcb5e73e17ba4c983140b7d21095c834b3087418
   nanopb: 438bc412db1928dac798aa6fd75726007be04262
-  PhoneNumberKit: ced55861269312a5e3bc2ef82a58d6255b1c976a
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   RecaptchaInterop: 7d1a4a01a6b2cb1610a47ef3f85f0c411434cb21
-  SDWebImage: 2d6d229046fea284d62e36bfb8ebe8287dfc5b10
-  SkeletonView: 5a050f6411e697abd4cda0a8d767013399dccd69
-  Stripe: e046335ab6e3f25d39f1a55bd98620a85269cffa
-  StripeApplePay: 1aa77f8ec7a6d9463fa8f49ae0672fe59dbf4c73
-  StripeCore: fe10c34fb3c9ae18b986913f7e4460e7c653ce93
-  StripePayments: 7084fed30c5f03f15ae23c5dce63715ba0b53e15
-  StripePaymentSheet: c8d25d4133476c6238d3cc932fb8219bb5ea49c0
-  StripePaymentsUI: c12de264eda974d91e43a769f53a6c6afc9a1715
-  StripeUICore: 090c4fe916d039616ce8f8de30392f4aeb33dd16
-  SwiftDate: bbc26e26fc8c0c33fbee8c140c5e8a68293a148a
-  SwiftMessages: 1a23aef303fa7bb26ad802880746cf8358e378fe
+  SwiftLint: eb47480d47c982481592c195c221d11013a679cc
 
-PODFILE CHECKSUM: 604c446a231d370aa9d155edd4941a2da2b1c928
+PODFILE CHECKSUM: c7954610bfe769cfa0fd4d95f03270905ed62091
 
 COCOAPODS: 1.16.2

@@ -32,13 +32,29 @@ target 'CleanMate' do
         config.build_settings['DEAD_CODE_STRIPPING'] = 'YES'
         config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
         
-        # Add header visibility settings for gRPC
-        if target.name.include?('gRPC-Core')
+        # Handle gRPC-specific settings
+        if target.name.include?('gRPC-Core') || target.name.include?('gRPC-C++')
           config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
           config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'GRPC_PUBLIC_HEADERS_ONLY=1'
           config.build_settings['HEADER_SEARCH_PATHS'] ||= ['$(inherited)']
           config.build_settings['HEADER_SEARCH_PATHS'] << '"${PODS_ROOT}/Headers/Public/gRPC-Core"'
           config.build_settings['HEADER_SEARCH_PATHS'] << '"${PODS_ROOT}/Headers/Public/gRPC-C++"'
+          
+          # Set all headers to private to prevent duplicates
+          target.build_phases.each do |phase|
+            if phase.is_a?(Xcodeproj::Project::Object::PBXHeadersBuildPhase)
+              phase.files.each do |file|
+                file.settings ||= {}
+                file.settings['ATTRIBUTES'] = ['Private']
+              end
+            end
+          end
+          
+          # Additional gRPC settings
+          config.build_settings['SKIP_INSTALL'] = 'NO'
+          config.build_settings['APPLICATION_EXTENSION_API_ONLY'] = 'NO'
+          config.build_settings['DEFINES_MODULE'] = 'YES'
+          config.build_settings['MODULEMAP_FILE'] = '${PODS_ROOT}/Headers/Public/#{target.name}/#{target.name}.modulemap'
         end
       end
     end

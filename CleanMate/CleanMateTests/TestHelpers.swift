@@ -1,6 +1,8 @@
 import XCTest
 import FirebaseAuth
-@testable import CleanMate
+
+@testable
+import CleanMate
 
 @MainActor
 class MockAuthenticationService: AuthenticationService {

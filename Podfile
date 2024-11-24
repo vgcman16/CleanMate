@@ -46,16 +46,11 @@ target 'CleanMate' do
           config.build_settings['CLANG_WARN_DOCUMENTATION_COMMENTS'] = 'NO'
           config.build_settings['SKIP_INSTALL'] = 'NO'
           config.build_settings['COPY_PHASE_STRIP'] = 'NO'
-          config.build_settings['DEFINES_MODULE'] = 'NO' # Disable module definition for gRPC
-          
-          # Disable header copying for gRPC
-          if target.respond_to?(:build_phases)
-            target.build_phases.each do |phase|
-              if phase.is_a?(Xcodeproj::Project::Object::PBXHeadersBuildPhase)
-                phase.files.clear
-              end
-            end
-          end
+          config.build_settings['DEFINES_MODULE'] = 'NO'
+          config.build_settings['FRAMEWORK_SEARCH_PATHS'] = []
+          config.build_settings['PRIVATE_HEADERS_FOLDER_PATH'] = ''
+          config.build_settings['PUBLIC_HEADERS_FOLDER_PATH'] = ''
+          config.build_settings['MODULEMAP_FILE'] = ''
         end
       end
     end

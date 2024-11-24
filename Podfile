@@ -31,6 +31,7 @@ target 'CleanMate' do
         config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
         config.build_settings['DEAD_CODE_STRIPPING'] = 'YES'
         config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+        config.build_settings['DEFINES_MODULE'] = 'YES'
         
         # Handle gRPC-specific settings
         if target.name.include?('gRPC-Core') || target.name.include?('gRPC-C++')
@@ -39,6 +40,7 @@ target 'CleanMate' do
           config.build_settings['HEADER_SEARCH_PATHS'] ||= ['$(inherited)']
           config.build_settings['HEADER_SEARCH_PATHS'] << '"${PODS_ROOT}/Headers/Public/gRPC-Core"'
           config.build_settings['HEADER_SEARCH_PATHS'] << '"${PODS_ROOT}/Headers/Public/gRPC-C++"'
+          config.build_settings['MODULEMAP_FILE'] = '${PODS_ROOT}/Headers/Public/#{target.name}/#{target.name}.modulemap'
           
           # Set all headers to private to prevent duplicates
           target.build_phases.each do |phase|
@@ -49,12 +51,6 @@ target 'CleanMate' do
               end
             end
           end
-          
-          # Additional gRPC settings
-          config.build_settings['SKIP_INSTALL'] = 'NO'
-          config.build_settings['APPLICATION_EXTENSION_API_ONLY'] = 'NO'
-          config.build_settings['DEFINES_MODULE'] = 'YES'
-          config.build_settings['MODULEMAP_FILE'] = '${PODS_ROOT}/Headers/Public/#{target.name}/#{target.name}.modulemap'
         end
       end
     end

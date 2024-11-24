@@ -17,7 +17,12 @@ permissions: write-all
 jobs:
   build-and-deploy:
     name: Build and Deploy
-    runs-on: macos-15
+    runs-on: macos-latest
+
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.0.app/Contents/Developer
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
 
     steps:
       - name: Checkout repository
@@ -204,7 +209,7 @@ jobs:
           PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
           LANG: en_US.UTF-8
           LC_ALL: en_US.UTF-8
-          DEVELOPER_DIR: /Applications/Xcode_16.app/Contents/Developer
+          DEVELOPER_DIR: /Applications/Xcode_16.0.app/Contents/Developer
           PODS_ROOT: ${GITHUB_WORKSPACE}/Pods
           PODS_CONFIGURATION_BUILD_DIR: ${GITHUB_WORKSPACE}/build/Build/Products
         run: |

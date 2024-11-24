@@ -29,14 +29,28 @@ class AuthenticationService: ObservableObject {
         }
     }
     
-    func signIn(email: String, password: String) async throws {
-        let result = try await Auth.auth().signIn(withEmail: email, password: password)
+    func signIn(
+        email: String,
+        password: String
+    ) async throws {
+        let result = try await Auth.auth().signIn(
+            withEmail: email,
+            password: password
+        )
         currentUser = result.user
         isAuthenticated = true
     }
     
-    func signUp(email: String, password: String, name: String, phone: String) async throws {
-        let result = try await Auth.auth().createUser(withEmail: email, password: password)
+    func signUp(
+        email: String,
+        password: String,
+        name: String,
+        phone: String
+    ) async throws {
+        let result = try await Auth.auth().createUser(
+            withEmail: email,
+            password: password
+        )
         currentUser = result.user
         isAuthenticated = true
         

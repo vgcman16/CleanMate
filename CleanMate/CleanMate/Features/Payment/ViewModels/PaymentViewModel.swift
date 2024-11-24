@@ -1,80 +1,133 @@
-import Foundation
 import Combine
-import Stripe
+import FirebaseAuth
+import StripePaymentSheet
+import SwiftUI
 
 class PaymentViewModel: ObservableObject {
+    @Published var booking: Booking
+    @Published var paymentSheet: PaymentSheet?
     @Published var savedPaymentMethods: [SavedPaymentMethod] = []
+    @Published var showSavedPaymentMethods = false
     @Published var selectedPaymentMethod: SavedPaymentMethod?
     @Published var isLoading = false
     @Published var showError = false
-    @Published var showAddCard = false
+    @Published var showSuccess = false
     @Published var errorMessage: String?
     
-    private let paymentService = PaymentService.shared
+    private let paymentService: PaymentService
     private var cancellables = Set<AnyCancellable>()
     
-    var isApplePayAvailable: Bool {
-        paymentService.setupApplePay()
+    init(booking: Booking, paymentService: PaymentService = .shared) {
+        self.booking = booking
+        self.paymentService = paymentService
     }
     
-    init() {
-        setupSubscriptions()
-    }
-    
-    private func setupSubscriptions() {
-        paymentService.$savedPaymentMethods
-            .assign(to: &$savedPaymentMethods)
+    func preparePaymentSheet() async {
+        isLoading = true
+        defer { isLoading = false }
         
-        paymentService.$isLoading
-            .assign(to: &$isLoading)
-    }
-    
-    func processPayment(for booking: Booking) async {
         do {
-            isLoading = true
-            let paymentIntent = try await paymentService.createPaymentIntent(for: booking)
-            
-            guard let clientSecret = paymentIntent.stripeClientSecret else {
-                throw PaymentError.invalidResponse
-            }
-            
-            let paymentSheet = PaymentSheet(
-                paymentIntentClientSecret: clientSecret,
-                configuration: PaymentSheet.Configuration()
+            let paymentIntent = try await paymentService.createPaymentIntent(
+                amount: Int(booking.totalAmount * 100),
+                currency: "usd"
             )
             
             await MainActor.run {
-                paymentSheet.present(from: UIApplication.shared.windows.first?.rootViewController ?? UIViewController()) { result in
-                    Task {
-                        switch result {
-                        case .completed:
-                            // Handle successful payment
-                            if let paymentIntent = try? await StripeAPI.PaymentIntent.get(clientSecret: clientSecret) {
-                                try? await self.paymentService.handlePaymentCompletion(paymentIntent: paymentIntent)
-                            }
-                        case .failed(let error):
-                            await MainActor.run {
-                                self.errorMessage = error.localizedDescription
-                                self.showError = true
-                            }
-                        case .canceled:
-                            await MainActor.run {
-                                self.errorMessage = "Payment was canceled"
-                                self.showError = true
-                            }
-                        }
-                        
-                        await MainActor.run {
-                            self.isLoading = false
-                        }
-                    }
-                }
+                var configuration = PaymentSheet.Configuration()
+                configuration.merchantDisplayName = "CleanMate"
+                configuration.allowsDelayedPaymentMethods = false
+                
+                paymentSheet = PaymentSheet(
+                    paymentIntentClientSecret: paymentIntent.clientSecret,
+                    configuration: configuration
+                )
+            }
+            
+            await fetchSavedPaymentMethods()
+        } catch {
+            await MainActor.run {
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+        }
+    }
+    
+    func handlePaymentResult(_ result: PaymentSheetResult) {
+        switch result {
+        case .completed:
+            Task {
+                await updateBookingStatus()
+            }
+        case .failed(let error):
+            errorMessage = error.localizedDescription
+            showError = true
+        case .canceled:
+            break
+        }
+    }
+    
+    func selectPaymentMethod(_ method: SavedPaymentMethod) {
+        selectedPaymentMethod = method
+        Task {
+            await processPaymentWithSavedMethod()
+        }
+    }
+    
+    private func updateBookingStatus() async {
+        do {
+            try await paymentService.updateBookingPaymentStatus(
+                bookingId: booking.id,
+                status: .paid
+            )
+            
+            await MainActor.run {
+                showSuccess = true
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = error.localizedDescription
-                self.showError = true
-                self.isLoading = false
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+        }
+    }
+    
+    private func fetchSavedPaymentMethods() async {
+        do {
+            let methods = try await paymentService.fetchSavedPaymentMethods()
+            
+            await MainActor.run {
+                savedPaymentMethods = methods
+                showSavedPaymentMethods = !methods.isEmpty
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+        }
+    }
+    
+    private func processPaymentWithSavedMethod() async {
+        guard let method = selectedPaymentMethod else { return }
+        
+        isLoading = true
+        defer { isLoading = false }
+        
+        do {
+            try await paymentService.processPayment(
+                amount: Int(booking.totalAmount * 100),
+                currency: "usd",
+                paymentMethodId: method.id,
+                bookingId: booking.id
+            )
+            
+            await MainActor.run {
+                showSuccess = true
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = error.localizedDescription
+                showError = true
             }
         }
     }

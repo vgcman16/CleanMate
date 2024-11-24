@@ -1,11 +1,12 @@
-import Foundation
-import FirebaseFirestore
-import FirebaseFirestoreSwift
 import Combine
+import FirebaseAuth
+import FirebaseFirestore
+import Foundation
 
 class BookingService: ObservableObject {
     static let shared = BookingService()
     private let db = Firestore.firestore()
+    private let auth = Auth.auth()
     
     @Published var services: [CleaningService] = []
     @Published var popularServices: [CleaningService] = []
@@ -51,12 +52,29 @@ class BookingService: ObservableObject {
     }
     
     func createBooking(_ booking: Booking) async throws -> String {
-        let bookingRef = db.collection("bookings").document()
-        var bookingWithId = booking
-        bookingWithId.id = bookingRef.documentID
+        guard let userId = auth.currentUser?.uid else {
+            throw BookingError.invalidUser
+        }
         
-        try bookingRef.setData(from: bookingWithId)
-        return bookingRef.documentID
+        do {
+            let docRef = try await db
+                .collection("bookings")
+                .addDocument(data: [
+                    "userId": userId,
+                    "serviceId": booking.service.id,
+                    "addressId": booking.address.id,
+                    "date": booking.date,
+                    "status": booking.status.rawValue,
+                    "totalAmount": booking.totalAmount,
+                    "numberOfRooms": booking.numberOfRooms,
+                    "specialInstructions": booking.specialInstructions ?? "",
+                    "createdAt": Timestamp()
+                ])
+            
+            return docRef.documentID
+        } catch {
+            throw BookingError.bookingCreationFailed(error.localizedDescription)
+        }
     }
     
     func cancelBooking(_ bookingId: String) async throws {
@@ -99,6 +117,47 @@ class BookingService: ObservableObject {
             return service.basePrice * estimatedHours
         case .fixed:
             return service.basePrice
+        }
+    }
+    
+    enum BookingError: LocalizedError {
+        case invalidBooking
+        case invalidUser
+        case invalidService
+        case invalidAddress
+        case invalidDate
+        case invalidPayment
+        case bookingCreationFailed(String)
+        case bookingUpdateFailed(String)
+        case bookingDeletionFailed(String)
+        case bookingNotFound
+        case unknown(Error)
+        
+        var errorDescription: String? {
+            switch self {
+            case .invalidBooking:
+                return "Invalid booking details."
+            case .invalidUser:
+                return "User information is missing."
+            case .invalidService:
+                return "Service information is missing."
+            case .invalidAddress:
+                return "Address information is missing."
+            case .invalidDate:
+                return "Invalid booking date."
+            case .invalidPayment:
+                return "Payment information is missing."
+            case .bookingCreationFailed(let message):
+                return "Failed to create booking: \(message)"
+            case .bookingUpdateFailed(let message):
+                return "Failed to update booking: \(message)"
+            case .bookingDeletionFailed(let message):
+                return "Failed to delete booking: \(message)"
+            case .bookingNotFound:
+                return "Booking not found."
+            case .unknown(let error):
+                return error.localizedDescription
+            }
         }
     }
 }

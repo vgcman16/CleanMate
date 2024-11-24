@@ -1,5 +1,8 @@
-import SwiftUI
+import Combine
+import FirebaseAuth
+import StripePaymentSheet
 import Stripe
+import SwiftUI
 
 struct AddCardView: View {
     @Environment(\.presentationMode) var presentationMode
@@ -14,35 +17,38 @@ struct AddCardView: View {
                         .keyboardType(.numberPad)
                     
                     HStack {
-                        TextField("MM", text: $viewModel.expiryMonth)
+                        TextField("MM/YY", text: $viewModel.expiry)
                             .keyboardType(.numberPad)
-                            .frame(width: 50)
-                        
-                        Text("/")
-                        
-                        TextField("YY", text: $viewModel.expiryYear)
-                            .keyboardType(.numberPad)
-                            .frame(width: 50)
-                        
-                        Spacer()
+                            .frame(maxWidth: .infinity)
                         
                         TextField("CVC", text: $viewModel.cvc)
                             .keyboardType(.numberPad)
-                            .frame(width: 70)
+                            .frame(maxWidth: .infinity)
                     }
+                    
+                    TextField("Cardholder Name", text: $viewModel.name)
+                        .textContentType(.name)
                 } header: {
                     Text("Card Details")
                 }
                 
                 Section {
-                    Toggle("Save Card", isOn: $viewModel.saveCard)
+                    Toggle("Save for Future Use", isOn: $viewModel.saveCard)
+                } header: {
+                    Text("Options")
                 }
                 
-                if viewModel.saveCard {
-                    Section {
-                        TextField("Name on Card", text: $viewModel.cardholderName)
-                            .textContentType(.name)
+                Section {
+                    Button(action: addCard) {
+                        if viewModel.isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle())
+                        } else {
+                            Text("Add Card")
+                                .frame(maxWidth: .infinity)
+                        }
                     }
+                    .disabled(!viewModel.isValid || viewModel.isLoading)
                 }
             }
             .navigationTitle("Add Card")
@@ -73,38 +79,81 @@ struct AddCardView: View {
             } message: {
                 Text(viewModel.errorMessage ?? "An error occurred")
             }
+            .alert(
+                "Success",
+                isPresented: $viewModel.showSuccess
+            ) {
+                Button("OK", role: .cancel) {
+                    presentationMode.wrappedValue.dismiss()
+                }
+            } message: {
+                Text("Card added successfully!")
+            }
+        }
+    }
+    
+    private func addCard() {
+        Task {
+            await viewModel.addCard()
         }
     }
 }
 
 class AddCardViewModel: ObservableObject {
     @Published var cardNumber = ""
-    @Published var expiryMonth = ""
-    @Published var expiryYear = ""
+    @Published var expiry = ""
     @Published var cvc = ""
-    @Published var cardholderName = ""
+    @Published var name = ""
     @Published var saveCard = true
+    @Published var isLoading = false
     @Published var showError = false
+    @Published var showSuccess = false
     @Published var errorMessage: String?
     
     var isValid: Bool {
         !cardNumber.isEmpty &&
-        !expiryMonth.isEmpty &&
-        !expiryYear.isEmpty &&
+        !expiry.isEmpty &&
         !cvc.isEmpty &&
-        (!saveCard || !cardholderName.isEmpty)
+        !name.isEmpty &&
+        cardNumber.count >= 16 &&
+        expiry.count >= 5 &&
+        cvc.count >= 3
+    }
+    
+    func addCard() async {
+        isLoading = true
+        defer { isLoading = false }
+        
+        do {
+            let card = try await PaymentService.shared.addCard(
+                number: cardNumber,
+                expiry: expiry,
+                cvc: cvc,
+                name: name,
+                save: saveCard
+            )
+            
+            await MainActor.run {
+                showSuccess = true
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+        }
     }
     
     func saveCardDetails() async -> SavedPaymentMethod? {
         do {
             let params = STPPaymentMethodCardParams()
             params.number = cardNumber
-            params.expMonth = NSNumber(value: Int(expiryMonth) ?? 0)
-            params.expYear = NSNumber(value: Int(expiryYear) ?? 0)
+            params.expMonth = NSNumber(value: Int(expiry.components(separatedBy: "/")[0]) ?? 0)
+            params.expYear = NSNumber(value: Int(expiry.components(separatedBy: "/")[1]) ?? 0)
             params.cvc = cvc
             
             let billingDetails = STPPaymentMethodBillingDetails()
-            billingDetails.name = cardholderName
+            billingDetails.name = name
             
             let paymentMethodParams = STPPaymentMethodParams(
                 card: params,
@@ -119,8 +168,8 @@ class AddCardViewModel: ObservableObject {
                 id: paymentMethod.stripeId ?? "",
                 type: .card,
                 last4: paymentMethod.card?.last4 ?? "",
-                expiryMonth: Int(expiryMonth),
-                expiryYear: Int(expiryYear),
+                expiryMonth: Int(expiry.components(separatedBy: "/")[0]),
+                expiryYear: Int(expiry.components(separatedBy: "/")[1]),
                 brand: paymentMethod.card?.brand.description,
                 isDefault: false
             )

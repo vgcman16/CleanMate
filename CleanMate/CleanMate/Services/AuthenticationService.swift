@@ -1,8 +1,24 @@
-import Foundation
-import Firebase
+import Combine
 import FirebaseAuth
 import FirebaseFirestore
-import Combine
+import Foundation
+
+enum AuthError: LocalizedError {
+    case signInFailed(String)
+    case signUpFailed(String)
+    case signOutFailed(String)
+    case userCreationFailed(String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .signInFailed(let message),
+             .signUpFailed(let message),
+             .signOutFailed(let message),
+             .userCreationFailed(let message):
+            return message
+        }
+    }
+}
 
 class AuthenticationService: ObservableObject {
     static let shared = AuthenticationService()
@@ -78,23 +94,6 @@ class AuthenticationService: ObservableObject {
             }
         } catch {
             print("Error fetching user: \(error.localizedDescription)")
-        }
-    }
-}
-
-enum AuthError: LocalizedError {
-    case signInFailed(String)
-    case signUpFailed(String)
-    case signOutFailed(String)
-    case userCreationFailed(String)
-    
-    var errorDescription: String? {
-        switch self {
-        case .signInFailed(let message),
-             .signUpFailed(let message),
-             .signOutFailed(let message),
-             .userCreationFailed(let message):
-            return message
         }
     }
 }

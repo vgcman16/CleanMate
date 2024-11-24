@@ -19,10 +19,25 @@ target 'CleanMate' do
   pod 'Firebase/Storage', '~> 10.29.0'
   pod 'Firebase/Messaging', '~> 10.29.0'
   
-  # Other dependencies
-  pod 'Stripe', '~> 23.18.0'
+  # UI/UX
   pod 'SDWebImage', '~> 5.18.0'
   pod 'IQKeyboardManagerSwift', '~> 6.5.0'
+  pod 'lottie-ios', '~> 4.4.0'  # For animations
+  pod 'SkeletonView', '~> 1.30.0'  # For loading states
+  pod 'SwiftMessages', '~> 9.0.0'  # For in-app notifications
+  
+  # Payments and Analytics
+  pod 'Stripe', '~> 23.18.0'
+  pod 'Analytics', '~> 4.1.0'  # Segment analytics
+  
+  # Calendar and Scheduling
+  pod 'CalendarKit', '~> 1.1.9'  # For booking interface
+  pod 'FSCalendar', '~> 2.8.4'  # For date selection
+  
+  # Utilities
+  pod 'SwiftDate', '~> 7.0.0'  # For date handling
+  pod 'PhoneNumberKit', '~> 3.7.0'  # For phone number validation
+  pod 'KeychainSwift', '~> 20.0.0'  # For secure credential storage
 
   post_install do |installer|
     installer.pods_project.targets.each do |target|

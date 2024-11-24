@@ -31,10 +31,11 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
       
-      # Fix for duplicate symbols in BoringSSL-GRPC
-      if target.name.include?('BoringSSL-GRPC')
-        config.build_settings['HEADER_SEARCH_PATHS'] = '$(inherited) ${PODS_ROOT}/BoringSSL-GRPC/src/include'
+      # Fix for duplicate symbols in BoringSSL-GRPC and gRPC-C++
+      if target.name.include?('BoringSSL-GRPC') || target.name.include?('gRPC-C++')
+        config.build_settings['HEADER_SEARCH_PATHS'] = '$(inherited) ${PODS_ROOT}/BoringSSL-GRPC/src/include ${PODS_ROOT}/gRPC-C++/include'
         config.build_settings['COPY_PHASE_STRIP'] = 'NO'
+        config.build_settings['SKIP_INSTALL'] = 'YES'
       end
     end
   end

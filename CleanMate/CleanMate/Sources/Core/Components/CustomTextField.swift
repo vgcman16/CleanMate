@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct CustomTextField: View {
-    @Binding var text: String
+    @Binding private(set) var text: String
     let placeholder: String
     let icon: String
     var keyboardType: UIKeyboardType = .default

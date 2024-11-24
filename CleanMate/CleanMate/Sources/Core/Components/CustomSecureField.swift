@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct CustomSecureField: View {
-    @Binding var text: String
+    @Binding private(set) var text: String
     let placeholder: String
     let icon: String
     @State private var isSecure = true

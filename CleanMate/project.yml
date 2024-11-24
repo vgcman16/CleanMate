@@ -2,45 +2,67 @@ name: CleanMate
 options:
   bundleIdPrefix: com.cleanmate
   deploymentTarget:
-    iOS: 18.1
+    iOS: 15.0
+  xcodeVersion: "14.0"
+  groupSortPosition: top
+
 packages:
   Firebase:
     url: https://github.com/firebase/firebase-ios-sdk.git
-    from: 10.17.0
+    from: 10.0.0
+  SDWebImage:
+    url: https://github.com/SDWebImage/SDWebImage.git
+    from: 5.0.0
+  IQKeyboardManagerSwift:
+    url: https://github.com/hackiftekhar/IQKeyboardManager.git
+    from: 6.5.0
+
 targets:
   CleanMate:
     type: application
     platform: iOS
     sources:
       - path: CleanMate
-      - path: Views
-      - path: Config
-      - path: Assets.xcassets
-    settings:
-      base:
-        INFOPLIST_FILE: CleanMate/Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: com.cleanmate.CleanMate
-    info:
-      path: CleanMate/Info.plist
-      properties:
-        CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "1"
-        UILaunchStoryboardName: LaunchScreen
-        UIMainStoryboardFile: Main
-        UISupportedInterfaceOrientations:
-          - UIInterfaceOrientationPortrait
-        UIRequiresFullScreen: true
+        excludes:
+          - "**/*Tests.swift"
     dependencies:
       - package: Firebase
-        product: FirebaseCore
+        product: FirebaseAnalytics
+      - package: Firebase
+        product: FirebaseAnalyticsSwift
       - package: Firebase
         product: FirebaseAuth
       - package: Firebase
         product: FirebaseFirestore
       - package: Firebase
-        product: FirebaseStorage
+        product: FirebaseFirestoreSwift
       - package: Firebase
         product: FirebaseMessaging
+      - package: SDWebImage
+      - package: IQKeyboardManagerSwift
+    settings:
+      base:
+        INFOPLIST_FILE: CleanMate/Supporting Files/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.cleanmate.app
+        DEVELOPMENT_TEAM: YOUR_TEAM_ID
+        CODE_SIGN_STYLE: Automatic
+        TARGETED_DEVICE_FAMILY: 1
+        OTHER_LDFLAGS: $(inherited) -ObjC
+    preBuildScripts:
+      - name: SwiftLint
+        script: |
+          if which swiftlint >/dev/null; then
+            swiftlint
+          else
+            echo "warning: SwiftLint not installed"
+          fi
+    postBuildScripts:
+      - name: Firebase Crashlytics
+        script: "${BUILD_DIR%Build/*}SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run"
+        inputFiles:
+          - "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}"
+          - "$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)"
+
   CleanMateTests:
     type: bundle.unit-test
     platform: iOS
@@ -48,6 +70,19 @@ targets:
       - path: CleanMateTests
     dependencies:
       - target: CleanMate
+      - package: Firebase
+        product: FirebaseAnalyticsSwift
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseFirestore
+      - package: Firebase
+        product: FirebaseFirestoreSwift
+    settings:
+      base:
+        INFOPLIST_FILE: CleanMateTests/Info.plist
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/CleanMate.app/CleanMate"
+
   CleanMateUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -55,3 +90,26 @@ targets:
       - path: CleanMateUITests
     dependencies:
       - target: CleanMate
+    settings:
+      base:
+        INFOPLIST_FILE: CleanMateUITests/Info.plist
+
+schemes:
+  CleanMate:
+    build:
+      targets:
+        CleanMate: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - CleanMateTests
+        - CleanMateUITests
+      gatherCoverageData: true
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

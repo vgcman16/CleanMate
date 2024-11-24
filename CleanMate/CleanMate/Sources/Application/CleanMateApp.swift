@@ -5,7 +5,8 @@ import IQKeyboardManagerSwift
 
 @main
 struct CleanMateApp: App {
-    @StateObject private var appState = AppState()
+    @StateObject
+    private var appState = AppState()
     
     @UIApplicationDelegateAdaptor(AppDelegate.self)
     private var delegate
@@ -29,9 +30,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Configure Push Notifications
         UNUserNotificationCenter.current().delegate = self
         let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
-        UNUserNotificationCenter.current().requestAuthorization(
+        
+        // Request authorization without using discardable let
+        _ = UNUserNotificationCenter.current().requestAuthorization(
             options: authOptions
         ) { _, _ in }
+        
         application.registerForRemoteNotifications()
         
         // Configure IQKeyboardManager

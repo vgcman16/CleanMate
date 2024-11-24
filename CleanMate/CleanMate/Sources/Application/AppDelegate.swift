@@ -22,7 +22,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         configurationForConnecting connectingSceneSession: UISceneSession,
         options: UIScene.ConnectionOptions
     ) -> UISceneConfiguration {
-        UISceneConfiguration(
+        return UISceneConfiguration(
             name: "Default Configuration",
             sessionRole: connectingSceneSession.role
         )
@@ -41,7 +41,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         UNUserNotificationCenter.current().delegate = self
         
         let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
-        UNUserNotificationCenter.current().requestAuthorization(
+        _ = UNUserNotificationCenter.current().requestAuthorization(
             options: authOptions
         ) { _, _ in }
         

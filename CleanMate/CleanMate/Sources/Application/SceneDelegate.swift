@@ -9,7 +9,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         willConnectTo session: UISceneSession,
         options connectionOptions: UIScene.ConnectionOptions
     ) {
-        guard let windowScene = scene as? UIWindowScene else { return }
+        guard let windowScene = scene as? UIWindowScene else {
+            return
+        }
         
         let window = UIWindow(windowScene: windowScene)
         let contentView = ContentView()

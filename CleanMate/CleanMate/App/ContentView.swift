@@ -1,17 +1,31 @@
+import Combine
+import FirebaseAuth
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject private var appState: AppState
+    @StateObject private var appState = AppState()
     
     var body: some View {
         Group {
             if appState.isAuthenticated {
                 MainTabView()
             } else {
-                SignInView()
+                NavigationView {
+                    SignInView()
+                }
             }
         }
-        .animation(.default, value: appState.isAuthenticated)
+        .environmentObject(appState)
+        .alert(
+            "Session Expired",
+            isPresented: $appState.showSessionExpired
+        ) {
+            Button("OK", role: .cancel) {
+                appState.signOut()
+            }
+        } message: {
+            Text("Please sign in again to continue.")
+        }
     }
 }
 
@@ -22,29 +36,25 @@ struct MainTabView: View {
         TabView(selection: $appState.selectedTab) {
             HomeView()
                 .tabItem {
-                    Label(Tab.home.title,
-                          systemImage: Tab.home.rawValue)
+                    Label("Home", systemImage: "house.fill")
                 }
                 .tag(Tab.home)
             
             BookingsView()
                 .tabItem {
-                    Label(Tab.bookings.title,
-                          systemImage: Tab.bookings.rawValue)
+                    Label("Bookings", systemImage: "calendar")
                 }
                 .tag(Tab.bookings)
             
             MessagesView()
                 .tabItem {
-                    Label(Tab.messages.title,
-                          systemImage: Tab.messages.rawValue)
+                    Label("Messages", systemImage: "envelope")
                 }
                 .tag(Tab.messages)
             
             ProfileView()
                 .tabItem {
-                    Label(Tab.profile.title,
-                          systemImage: Tab.profile.rawValue)
+                    Label("Profile", systemImage: "person.fill")
                 }
                 .tag(Tab.profile)
         }
@@ -62,11 +72,57 @@ struct HomeView: View {
 }
 
 struct BookingsView: View {
+    @StateObject private var viewModel = BookingsViewModel()
+    
     var body: some View {
         NavigationView {
-            Text("Bookings View")
-                .navigationTitle("Bookings")
+            List {
+                ForEach(viewModel.bookings) { booking in
+                    BookingRow(booking: booking)
+                }
+            }
+            .navigationTitle("My Bookings")
+            .refreshable {
+                await viewModel.fetchBookings()
+            }
+            .alert(
+                "Error",
+                isPresented: $viewModel.showError
+            ) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(viewModel.errorMessage ?? "An error occurred")
+            }
         }
+        .task {
+            await viewModel.fetchBookings()
+        }
+    }
+}
+
+struct BookingRow: View {
+    let booking: Booking
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(booking.service.name)
+                .font(.headline)
+            
+            Text(booking.date.formatted(date: .abbreviated, time: .shortened))
+                .font(.subheadline)
+                .foregroundColor(.gray)
+            
+            HStack {
+                Circle()
+                    .fill(booking.status.color)
+                    .frame(width: 8, height: 8)
+                
+                Text(booking.status.displayText)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+        }
+        .padding(.vertical, 8)
     }
 }
 
@@ -80,10 +136,63 @@ struct MessagesView: View {
 }
 
 struct ProfileView: View {
+    @EnvironmentObject private var appState: AppState
+    @StateObject private var viewModel = ProfileViewModel()
+    
     var body: some View {
         NavigationView {
-            Text("Profile View")
-                .navigationTitle("Profile")
+            List {
+                Section {
+                    HStack {
+                        Image(systemName: "person.circle.fill")
+                            .resizable()
+                            .frame(width: 60, height: 60)
+                            .foregroundColor(.gray)
+                        
+                        VStack(alignment: .leading) {
+                            Text(viewModel.user?.fullName ?? "")
+                                .font(.headline)
+                            Text(viewModel.user?.email ?? "")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+                
+                Section {
+                    NavigationLink(destination: PaymentMethodsView()) {
+                        Label("Payment Methods", systemImage: "creditcard")
+                    }
+                    
+                    NavigationLink(destination: AddressesView()) {
+                        Label("Addresses", systemImage: "location")
+                    }
+                    
+                    NavigationLink(destination: NotificationsView()) {
+                        Label("Notifications", systemImage: "bell")
+                    }
+                }
+                
+                Section {
+                    Button(action: { appState.signOut() }) {
+                        Label("Sign Out", systemImage: "arrow.right.square")
+                            .foregroundColor(.red)
+                    }
+                }
+            }
+            .navigationTitle("Profile")
+            .alert(
+                "Error",
+                isPresented: $viewModel.showError
+            ) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(viewModel.errorMessage ?? "An error occurred")
+            }
+        }
+        .task {
+            await viewModel.fetchProfile()
         }
     }
 }

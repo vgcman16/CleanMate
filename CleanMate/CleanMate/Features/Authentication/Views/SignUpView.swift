@@ -1,92 +1,77 @@
-import SwiftUI
+import Combine
+import FirebaseAuth
 import PhoneNumberKit
+import SwiftUI
 
 struct SignUpView: View {
     @StateObject private var viewModel = SignUpViewModel()
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                Text("Create Account")
-                    .font(.title)
-                    .fontWeight(.bold)
-                
-                VStack(spacing: 15) {
-                    CustomTextField(text: $viewModel.fullName,
-                                 placeholder: "Full Name",
-                                 icon: "person.fill")
+        NavigationView {
+            Form {
+                Section {
+                    TextField("Full Name", text: $viewModel.fullName)
                         .textContentType(.name)
                     
-                    CustomTextField(text: $viewModel.email,
-                                 placeholder: "Email",
-                                 icon: "envelope.fill")
+                    TextField("Email", text: $viewModel.email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
                     
-                    PhoneNumberField(text: $viewModel.phoneNumber,
-                                   placeholder: "Phone Number")
+                    TextField("Phone", text: $viewModel.phoneNumber)
+                        .textContentType(.telephoneNumber)
+                        .keyboardType(.phonePad)
                     
-                    CustomSecureField(text: $viewModel.password,
-                                    placeholder: "Password",
-                                    icon: "lock.fill")
+                    SecureField("Password", text: $viewModel.password)
                         .textContentType(.newPassword)
                     
-                    CustomSecureField(text: $viewModel.confirmPassword,
-                                    placeholder: "Confirm Password",
-                                    icon: "lock.fill")
+                    SecureField("Confirm Password", text: $viewModel.confirmPassword)
                         .textContentType(.newPassword)
+                } header: {
+                    Text("Account Details")
                 }
-                .padding(.horizontal)
                 
-                // Terms and Conditions
-                HStack {
-                    Toggle("", isOn: $viewModel.acceptedTerms)
-                        .labelsHidden()
+                Section {
+                    Toggle("Accept Terms", isOn: $viewModel.acceptedTerms)
                     
-                    Text("I accept the ")
-                    Button("Terms and Conditions") {
-                        viewModel.showTerms = true
+                    Button(action: { viewModel.showTerms = true }) {
+                        Text("View Terms and Conditions")
+                            .foregroundColor(.blue)
                     }
-                    .foregroundColor(.blue)
+                } header: {
+                    Text("Terms and Conditions")
                 }
-                .padding(.horizontal)
                 
-                // Sign Up Button
-                Button(action: {
-                    Task {
-                        await viewModel.signUp()
-                    }
-                }) {
+                Button(action: { Task { await viewModel.signUp() } }) {
                     if viewModel.isLoading {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .progressViewStyle(CircularProgressViewStyle())
                     } else {
-                        Text("Sign Up")
-                            .fontWeight(.semibold)
+                        Text("Create Account")
+                            .frame(maxWidth: .infinity)
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
-                .padding(.horizontal)
                 .disabled(!viewModel.isValid || viewModel.isLoading)
-                
-                Spacer()
             }
-            .padding()
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .alert("Error", isPresented: $viewModel.showError) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(viewModel.errorMessage)
-        }
-        .sheet(isPresented: $viewModel.showTerms) {
-            TermsAndConditionsView()
+            .navigationTitle("Sign Up")
+            .navigationBarTitleDisplayMode(.inline)
+            .alert(
+                "Error",
+                isPresented: $viewModel.showError
+            ) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(viewModel.errorMessage ?? "An error occurred")
+            }
+            .sheet(
+                isPresented: $viewModel.showTerms
+            ) {
+                TermsView(
+                    isPresented: $viewModel.showTerms,
+                    onAccept: { viewModel.acceptedTerms = true }
+                )
+            }
         }
     }
 }
@@ -149,61 +134,45 @@ class SignUpViewModel: ObservableObject {
     }
 }
 
-struct PhoneNumberField: View {
-    @Binding var text: String
-    let placeholder: String
-    
-    var body: some View {
-        HStack {
-            Image(systemName: "phone.fill")
-                .foregroundColor(.gray)
-            TextField(placeholder, text: $text)
-                .keyboardType(.phonePad)
-                .textContentType(.telephoneNumber)
-        }
-        .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(10)
-    }
-}
-
-struct TermsAndConditionsView: View {
-    @Environment(\.presentationMode) var presentationMode
+struct TermsView: View {
+    @Binding var isPresented: Bool
+    let onAccept: () -> Void
     
     var body: some View {
         NavigationView {
             ScrollView {
-                Text("""
-                    Terms and Conditions
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Terms and Conditions")
+                        .font(.title)
+                        .fontWeight(.bold)
                     
-                    1. Acceptance of Terms
-                    By accessing and using the CleanMate app, you agree to be bound by these Terms and Conditions.
-                    
-                    2. User Registration
-                    Users must provide accurate and complete information during registration.
-                    
-                    3. Service Description
-                    CleanMate provides a platform connecting users with cleaning service providers.
-                    
-                    4. Privacy Policy
-                    Your use of CleanMate is also governed by our Privacy Policy.
-                    
-                    5. Payment Terms
-                    All payments are processed securely through our payment providers.
-                    
-                    6. Cancellation Policy
-                    Cancellations must be made at least 24 hours before the scheduled service.
-                    
-                    7. Liability
-                    CleanMate is not liable for any damages or losses incurred during service provision.
-                    """)
+                    Text("""
+                        1. Service Agreement
+                        By using CleanMate, you agree to abide by our service terms.
+                        
+                        2. Booking and Cancellation
+                        - 24-hour notice required for cancellation
+                        - Late cancellations may incur fees
+                        
+                        3. Payment Terms
+                        - Payment is processed after service completion
+                        - All major credit cards accepted
+                        
+                        4. Privacy Policy
+                        We protect your personal information as outlined in our privacy policy.
+                        """)
+                }
                 .padding()
             }
-            .navigationTitle("Terms & Conditions")
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarItems(trailing: Button("Done") {
-                presentationMode.wrappedValue.dismiss()
-            })
+            .navigationBarItems(
+                leading: Button("Close") {
+                    isPresented = false
+                },
+                trailing: Button("Accept") {
+                    onAccept()
+                    isPresented = false
+                }
+            )
         }
     }
 }

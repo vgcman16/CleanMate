@@ -21,16 +21,18 @@ struct SignInView: View {
                     Text("Sign In")
                 }
                 
-                Button(action: { Task { await viewModel.signIn() } }) {
-                    if viewModel.isLoading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle())
-                    } else {
-                        Text("Sign In")
-                            .frame(maxWidth: .infinity)
+                Section {
+                    Button(action: signIn) {
+                        if viewModel.isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle())
+                        } else {
+                            Text("Sign In")
+                                .frame(maxWidth: .infinity)
+                        }
                     }
+                    .disabled(!viewModel.isValid || viewModel.isLoading)
                 }
-                .disabled(!viewModel.isValid || viewModel.isLoading)
             }
             .navigationTitle("Sign In")
             .navigationBarTitleDisplayMode(.inline)
@@ -42,6 +44,12 @@ struct SignInView: View {
             } message: {
                 Text(viewModel.errorMessage ?? "An error occurred")
             }
+        }
+    }
+    
+    func signIn() {
+        Task {
+            await viewModel.signIn()
         }
     }
 }

@@ -1,11 +1,18 @@
+import Combine
+import FirebaseAuth
 import PassKit
 import Stripe
+import StripePaymentSheet
 import SwiftUI
 
 struct PaymentView: View {
-    @StateObject private var viewModel = PaymentViewModel()
+    @StateObject private var viewModel: PaymentViewModel
     @Environment(\.presentationMode) var presentationMode
     let booking: Booking
+    
+    init(booking: Booking) {
+        _viewModel = StateObject(wrappedValue: PaymentViewModel(booking: booking))
+    }
     
     var body: some View {
         NavigationView {

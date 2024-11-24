@@ -25,7 +25,7 @@ final class BookingServiceTests: XCTestCase {
             scheduledDate: Date(),
             scheduledTime: TimeSlot(
                 start: Date(),
-                end: Date().addingTimeInterval(7200)
+                end: Date().addingTimeInterval(7_200)
             ),
             status: .upcoming,
             address: Address(

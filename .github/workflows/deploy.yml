@@ -210,8 +210,15 @@ jobs:
           # Clean DerivedData
           rm -rf ~/Library/Developer/Xcode/DerivedData/*
           
-          # Build the app
+          # Show xcodebuild version
+          xcodebuild -version
+          
+          # List schemes
+          xcodebuild -list -workspace CleanMate.xcworkspace
+          
+          # Build the app with detailed output
           echo "Building app..."
+          set -x  # Enable command echo
           xcodebuild -workspace CleanMate.xcworkspace \
             -scheme CleanMate \
             -configuration Release \
@@ -229,7 +236,21 @@ jobs:
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="RELEASE" \
             ONLY_ACTIVE_ARCH=NO \
             DEBUG_INFORMATION_FORMAT=dwarf-with-dsym \
-            | xcpretty
+            OTHER_SWIFT_FLAGS="-D RELEASE" \
+            ENABLE_BITCODE=NO \
+            STRIP_SWIFT_SYMBOLS=NO \
+            COPY_PHASE_STRIP=NO \
+            BUILD_DIR="$BUILD_DIR" \
+            CONFIGURATION_BUILD_DIR="$BUILD_DIR/Build/Products" \
+            DWARF_DSYM_FOLDER_PATH="$BUILD_DIR/Build/Products" \
+            | tee build.log | xcpretty && exit ${PIPESTATUS[0]}
+          
+          # If build fails, show the full log
+          if [ ! -d "$BUILD_DIR/CleanMate.xcarchive" ]; then
+            echo "Build failed. Showing full log:"
+            cat build.log
+            exit 1
+          fi
           
           # Export the app
           echo "Exporting app..."
@@ -238,7 +259,14 @@ jobs:
             -exportOptionsPlist exportOptions.plist \
             -exportPath "$BUILD_DIR" \
             -allowProvisioningUpdates \
-            | xcpretty
+            | tee export.log | xcpretty && exit ${PIPESTATUS[0]}
+          
+          # If export fails, show the full log
+          if [ ! -f "$BUILD_DIR/CleanMate.ipa" ]; then
+            echo "Export failed. Showing full log:"
+            cat export.log
+            exit 1
+          fi
           
           # Upload to TestFlight
           echo "Uploading to TestFlight..."

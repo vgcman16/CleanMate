@@ -34,14 +34,14 @@ target 'CleanMate' do
         # Framework build settings
         config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
         config.build_settings['ENABLE_BITCODE'] = 'NO'
+        config.build_settings['STRIP_INSTALLED_PRODUCT'] = 'NO'
+        config.build_settings['DEAD_CODE_STRIPPING'] = 'YES'
         
         # Fix script phase warnings
-        if target.respond_to?(:product_type) and target.product_type == "com.apple.product-type.framework"
-          target.build_phases.each do |build_phase|
-            if build_phase.respond_to?(:name) && 
-               ['Create Symlinks to Header Folders', '[CP] Copy XCFrameworks', '[CP] Copy Pods Resources'].include?(build_phase.name)
-              build_phase.always_out_of_date = "1"
-            end
+        target.build_phases.each do |build_phase|
+          if build_phase.respond_to?(:name) && 
+             ['[CP] Copy XCFrameworks', '[CP] Copy Pods Resources'].include?(build_phase.name)
+            build_phase.always_out_of_date = "1"
           end
         end
       end
@@ -65,6 +65,8 @@ target 'CleanMate' do
           config.build_settings['ENABLE_BITCODE'] = 'NO'
           config.build_settings['CLANG_WARN_DOCUMENTATION_COMMENTS'] = 'NO'
           config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', 'GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1']
+          config.build_settings['STRIP_INSTALLED_PRODUCT'] = 'NO'
+          config.build_settings['COPY_PHASE_STRIP'] = 'NO'
         end
       end
     end

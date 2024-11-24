@@ -17,7 +17,9 @@ struct CustomSecureField: View {
                 TextField(placeholder, text: $text)
             }
             
-            Button(action: { isSecure.toggle() }) {
+            Button {
+                isSecure.toggle()
+            } label: {
                 Image(systemName: isSecure ? "eye.slash.fill" : "eye.fill")
                     .foregroundColor(.gray)
             }

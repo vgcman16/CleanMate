@@ -12,6 +12,7 @@ struct CustomTextField: View {
         HStack {
             Image(systemName: icon)
                 .foregroundColor(.gray)
+            
             TextField(placeholder, text: $text)
                 .keyboardType(keyboardType)
                 .textContentType(textContentType)
@@ -28,7 +29,10 @@ struct CustomTextField_Previews: PreviewProvider {
         CustomTextField(
             text: .constant(""),
             placeholder: "Email",
-            icon: "envelope"
+            icon: "envelope",
+            keyboardType: .emailAddress,
+            textContentType: .emailAddress,
+            autocapitalization: .none
         )
         .padding()
         .previewLayout(.sizeThatFits)

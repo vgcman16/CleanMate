@@ -12,14 +12,14 @@ target 'CleanMate' do
   use_frameworks!
   inhibit_all_warnings!
 
-  # Pods for CleanMate
-  pod 'Firebase', '~> 10.29.0'
-  pod 'FirebaseCore', '~> 10.29.0'
-  pod 'FirebaseAuth', '~> 10.29.0'
-  pod 'FirebaseFirestore', '~> 10.29.0'
-  pod 'FirebaseStorage', '~> 10.29.0'
-  pod 'FirebaseMessaging', '~> 10.29.0'
-  pod 'FirebaseCoreInternal', '~> 10.29.0'
+  # Firebase
+  pod 'Firebase/Core', '~> 10.29.0'
+  pod 'Firebase/Auth', '~> 10.29.0'
+  pod 'Firebase/Firestore', '~> 10.29.0'
+  pod 'Firebase/Storage', '~> 10.29.0'
+  pod 'Firebase/Messaging', '~> 10.29.0'
+  
+  # Other dependencies
   pod 'Stripe', '~> 23.18.0'
   pod 'SDWebImage', '~> 5.18.0'
   pod 'IQKeyboardManagerSwift', '~> 6.5.0'

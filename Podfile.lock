@@ -952,13 +952,23 @@ PODS:
   - BoringSSL-GRPC/Implementation (0.0.32):
     - BoringSSL-GRPC/Interface (= 0.0.32)
   - BoringSSL-GRPC/Interface (0.0.32)
-  - Firebase (10.29.0):
-    - Firebase/Core (= 10.29.0)
+  - Firebase/Auth (10.29.0):
+    - Firebase/CoreOnly
+    - FirebaseAuth (~> 10.29.0)
   - Firebase/Core (10.29.0):
     - Firebase/CoreOnly
     - FirebaseAnalytics (~> 10.29.0)
   - Firebase/CoreOnly (10.29.0):
     - FirebaseCore (= 10.29.0)
+  - Firebase/Firestore (10.29.0):
+    - Firebase/CoreOnly
+    - FirebaseFirestore (~> 10.29.0)
+  - Firebase/Messaging (10.29.0):
+    - Firebase/CoreOnly
+    - FirebaseMessaging (~> 10.29.0)
+  - Firebase/Storage (10.29.0):
+    - Firebase/CoreOnly
+    - FirebaseStorage (~> 10.29.0)
   - FirebaseAnalytics (10.29.0):
     - FirebaseAnalytics/AdIdSupport (= 10.29.0)
     - FirebaseCore (~> 10.0)
@@ -1201,13 +1211,11 @@ PODS:
     - StripeCore (= 23.18.3)
 
 DEPENDENCIES:
-  - Firebase (~> 10.29.0)
-  - FirebaseAuth (~> 10.29.0)
-  - FirebaseCore (~> 10.29.0)
-  - FirebaseCoreInternal (~> 10.29.0)
-  - FirebaseFirestore (~> 10.29.0)
-  - FirebaseMessaging (~> 10.29.0)
-  - FirebaseStorage (~> 10.29.0)
+  - Firebase/Auth (~> 10.29.0)
+  - Firebase/Core (~> 10.29.0)
+  - Firebase/Firestore (~> 10.29.0)
+  - Firebase/Messaging (~> 10.29.0)
+  - Firebase/Storage (~> 10.29.0)
   - IQKeyboardManagerSwift (~> 6.5.0)
   - SDWebImage (~> 5.18.0)
   - Stripe (~> 23.18.0)
@@ -1285,6 +1293,6 @@ SPEC CHECKSUMS:
   StripePaymentsUI: c12de264eda974d91e43a769f53a6c6afc9a1715
   StripeUICore: 090c4fe916d039616ce8f8de30392f4aeb33dd16
 
-PODFILE CHECKSUM: b589ab5a5dc48d9ec8adf713fb13886ac05021b8
+PODFILE CHECKSUM: 04441f33b105f5b87b3729125e8918e0cc33c21a
 
 COCOAPODS: 1.16.2

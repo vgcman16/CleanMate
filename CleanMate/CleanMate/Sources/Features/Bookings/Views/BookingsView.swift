@@ -1,8 +1,7 @@
 import SwiftUI
 
 struct BookingsView: View {
-    @StateObject
-    private var viewModel = BookingsViewModel()
+    @StateObject private var viewModel = BookingsViewModel()
     
     var body: some View {
         NavigationView {

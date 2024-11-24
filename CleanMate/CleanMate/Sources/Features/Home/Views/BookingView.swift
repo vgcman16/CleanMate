@@ -1,11 +1,8 @@
 import SwiftUI
 
 struct BookingView: View {
-    @StateObject
-    private var viewModel: BookingViewModel
-    
-    @Environment(\.dismiss)
-    private var dismiss
+    @StateObject private var viewModel: BookingViewModel
+    @Environment(\.dismiss) private var dismiss
     
     init(service: CleaningService) {
         _viewModel = StateObject(wrappedValue: BookingViewModel(service: service))

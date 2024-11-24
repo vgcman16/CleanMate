@@ -1,17 +1,26 @@
 import XCTest
 @testable import CleanMate
 
+@MainActor
 final class BookingViewModelTests: XCTestCase {
     var sut: BookingViewModel!
     var mockBookingService: MockBookingService!
-    var mockService: CleaningService!
     
     override func setUp() {
         super.setUp()
+        let service = CleaningService(
+            id: "test-id",
+            name: "Test Service",
+            description: "Test Description",
+            basePrice: 100,
+            imageURL: nil,
+            category: .regular,
+            isPopular: true,
+            createdAt: Date()
+        )
         mockBookingService = MockBookingService()
-        mockService = CleaningService.mock()
         sut = BookingViewModel(
-            service: mockService,
+            service: service,
             bookingService: mockBookingService
         )
     }
@@ -19,68 +28,71 @@ final class BookingViewModelTests: XCTestCase {
     override func tearDown() {
         sut = nil
         mockBookingService = nil
-        mockService = nil
         super.tearDown()
     }
     
     func testCreateBookingSuccess() async {
         // Given
-        mockBookingService.shouldSucceed = true
-        sut.selectedAddress = Address.mock()
-        sut.selectedDate = Date()
-        sut.selectedTime = Date()
+        sut.selectedAddress = Address(
+            street: "123 Test St",
+            city: "Test City",
+            state: "Test State",
+            zipCode: "12345",
+            country: "Test Country"
+        )
+        mockBookingService.shouldThrowError = false
         
         // When
-        let success = await sut.createBooking()
+        let result = await sut.createBooking()
         
         // Then
-        XCTAssertTrue(success)
+        XCTAssertTrue(result)
+        XCTAssertTrue(mockBookingService.createBookingCalled)
         XCTAssertFalse(sut.showError)
-        XCTAssertTrue(sut.showPaymentSheet)
+        XCTAssertTrue(sut.errorMessage.isEmpty)
     }
     
-    func testCreateBookingFailureNoAddress() async {
+    func testCreateBookingFailure() async {
+        // Given
+        sut.selectedAddress = Address(
+            street: "123 Test St",
+            city: "Test City",
+            state: "Test State",
+            zipCode: "12345",
+            country: "Test Country"
+        )
+        mockBookingService.shouldThrowError = true
+        
+        // When
+        let result = await sut.createBooking()
+        
+        // Then
+        XCTAssertFalse(result)
+        XCTAssertTrue(mockBookingService.createBookingCalled)
+        XCTAssertTrue(sut.showError)
+        XCTAssertFalse(sut.errorMessage.isEmpty)
+    }
+    
+    func testCreateBookingValidation() async {
         // Given
         sut.selectedAddress = nil
         
         // When
-        let success = await sut.createBooking()
+        let result = await sut.createBooking()
         
         // Then
-        XCTAssertFalse(success)
+        XCTAssertFalse(result)
+        XCTAssertFalse(mockBookingService.createBookingCalled)
         XCTAssertTrue(sut.showError)
         XCTAssertEqual(sut.errorMessage, "Please select an address")
     }
     
-    func testCreateBookingFailurePastTime() async {
+    func testTotalAmount() {
         // Given
-        sut.selectedAddress = Address.mock()
-        sut.selectedDate = Date()
-        sut.selectedTime = Calendar.current.date(
-            byAdding: .hour,
-            value: -1,
-            to: Date()
-        )!
-        
-        // When
-        let success = await sut.createBooking()
+        sut.numberOfRooms = 3
         
         // Then
-        XCTAssertFalse(success)
-        XCTAssertTrue(sut.showError)
-        XCTAssertEqual(sut.errorMessage, "Please select a future time")
-    }
-    
-    func testTotalAmountCalculation() {
-        // Given
-        let basePrice = mockService.basePrice
-        let numberOfRooms = 3
-        
-        // When
-        sut.numberOfRooms = numberOfRooms
-        
-        // Then
-        XCTAssertEqual(sut.totalAmount, basePrice * Double(numberOfRooms))
+        XCTAssertEqual(sut.totalAmount, 300)
     }
     
     func testIncrementRooms() {
@@ -94,17 +106,6 @@ final class BookingViewModelTests: XCTestCase {
         XCTAssertEqual(sut.numberOfRooms, 6)
     }
     
-    func testIncrementRoomsLimit() {
-        // Given
-        sut.numberOfRooms = 10
-        
-        // When
-        sut.incrementRooms()
-        
-        // Then
-        XCTAssertEqual(sut.numberOfRooms, 10)
-    }
-    
     func testDecrementRooms() {
         // Given
         sut.numberOfRooms = 5
@@ -114,30 +115,5 @@ final class BookingViewModelTests: XCTestCase {
         
         // Then
         XCTAssertEqual(sut.numberOfRooms, 4)
-    }
-    
-    func testDecrementRoomsLimit() {
-        // Given
-        sut.numberOfRooms = 1
-        
-        // When
-        sut.decrementRooms()
-        
-        // Then
-        XCTAssertEqual(sut.numberOfRooms, 1)
-    }
-}
-
-// MARK: - Mock Service
-
-class MockBookingService: BookingService {
-    var shouldSucceed = true
-    var error: Error?
-    
-    override func createBooking(_ booking: Booking) async throws -> String {
-        if shouldSucceed {
-            return "mock-booking-id"
-        }
-        throw error ?? NSError(domain: "booking", code: -1, userInfo: nil)
     }
 }

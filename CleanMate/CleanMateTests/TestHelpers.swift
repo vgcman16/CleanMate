@@ -1,180 +1,77 @@
 import XCTest
 import FirebaseAuth
-import FirebaseFirestore
 @testable import CleanMate
 
-// MARK: - Test Data Factories
-
-extension CleaningService {
-    static func mock(
-        id: String = "mock-service-id",
-        name: String = "Standard Cleaning",
-        description: String = "A thorough cleaning of your home",
-        basePrice: Double = 50.0,
-        imageURL: String? = nil,
-        category: ServiceCategory = .regular,
-        isPopular: Bool = true,
-        createdAt: Date = Date()
-    ) -> CleaningService {
-        CleaningService(
-            id: id,
-            name: name,
-            description: description,
-            basePrice: basePrice,
-            imageURL: imageURL,
-            category: category,
-            isPopular: isPopular,
-            createdAt: createdAt
-        )
-    }
-}
-
-extension Booking {
-    static func mock(
-        id: String = "mock-booking-id",
-        userId: String = "mock-user-id",
-        serviceId: String = "mock-service-id",
-        scheduledDate: Date = Date(),
-        scheduledTime: TimeSlot = .mock(),
-        status: BookingStatus = .upcoming,
-        address: Address = .mock(),
-        createdAt: Date = Date()
-    ) -> Booking {
-        Booking(
-            id: id,
-            userId: userId,
-            serviceId: serviceId,
-            scheduledDate: scheduledDate,
-            scheduledTime: scheduledTime,
-            status: status,
-            address: address,
-            createdAt: createdAt
-        )
-    }
-}
-
-extension TimeSlot {
-    static func mock(
-        start: Date = Date(),
-        end: Date = Calendar.current.date(byAdding: .hour, value: 2, to: Date()) ?? Date()
-    ) -> TimeSlot {
-        TimeSlot(start: start, end: end)
-    }
-}
-
-extension Address {
-    static func mock(
-        street: String = "123 Main St",
-        city: String = "San Francisco",
-        state: String = "CA",
-        zipCode: String = "94105",
-        country: String = "United States"
-    ) -> Address {
-        Address(
-            street: street,
-            city: city,
-            state: state,
-            zipCode: zipCode,
-            country: country
-        )
-    }
-}
-
-// MARK: - Mock Firebase Classes
-
-class MockFirestore {
-    var collections: [String: MockCollectionReference] = [:]
-    var error: Error?
+@MainActor
+class MockAuthenticationService: AuthenticationService {
+    var signInCalled = false
+    var signUpCalled = false
+    var signOutCalled = false
+    var resetPasswordCalled = false
+    var shouldThrowError = false
     
-    func collection(_ path: String) -> MockCollectionReference {
-        if let collection = collections[path] {
-            return collection
+    override func signIn(email: String, password: String) async throws {
+        if shouldThrowError {
+            throw NSError(domain: "test", code: 401)
         }
-        let collection = MockCollectionReference()
-        collections[path] = collection
-        return collection
+        signInCalled = true
     }
-}
-
-class MockCollectionReference {
-    var documents: [String: MockDocumentReference] = [:]
-    var error: Error?
-    var queryResults: [MockDocumentSnapshot] = []
     
-    func document(_ path: String) -> MockDocumentReference {
-        if let document = documents[path] {
-            return document
+    override func signUp(
+        email: String,
+        password: String,
+        name: String,
+        phone: String
+    ) async throws {
+        if shouldThrowError {
+            throw NSError(domain: "test", code: 401)
         }
-        let document = MockDocumentReference()
-        documents[path] = document
-        return document
+        signUpCalled = true
     }
     
-    func addDocument(data: [String: Any]) throws -> MockDocumentReference {
-        let document = MockDocumentReference()
-        document.data = data
-        return document
-    }
-    
-    func whereField(_ field: String, isEqualTo: Any) -> MockQuery {
-        return MockQuery(queryResults: queryResults)
-    }
-    
-    func getDocuments() async throws -> MockQuerySnapshot {
-        if let error = error {
-            throw error
+    override func signOut() throws {
+        if shouldThrowError {
+            throw NSError(domain: "test", code: 401)
         }
-        return MockQuerySnapshot(documents: queryResults)
+        signOutCalled = true
     }
-}
-
-class MockDocumentReference {
-    var data: [String: Any]?
-    var error: Error?
     
-    func setData(_ data: [String: Any]) async throws {
-        if let error = error {
-            throw error
+    override func resetPassword(email: String) async throws {
+        if shouldThrowError {
+            throw NSError(domain: "test", code: 401)
         }
-        self.data = data
+        resetPasswordCalled = true
     }
+}
+
+@MainActor
+class MockBookingService: BookingService {
+    var createBookingCalled = false
+    var getBookingsCalled = false
+    var cancelBookingCalled = false
+    var shouldThrowError = false
+    var mockBookings: [Booking] = []
     
-    func updateData(_ data: [String: Any]) async throws {
-        if let error = error {
-            throw error
+    override func createBooking(_ booking: Booking) async throws -> String {
+        if shouldThrowError {
+            throw NSError(domain: "test", code: 401)
         }
-        self.data?.merge(data) { _, new in new }
-    }
-}
-
-class MockQuery {
-    var queryResults: [MockDocumentSnapshot]
-    
-    init(queryResults: [MockDocumentSnapshot]) {
-        self.queryResults = queryResults
+        createBookingCalled = true
+        return "test-booking-id"
     }
     
-    func getDocuments() async throws -> MockQuerySnapshot {
-        return MockQuerySnapshot(documents: queryResults)
-    }
-}
-
-class MockQuerySnapshot {
-    var documents: [MockDocumentSnapshot]
-    
-    init(documents: [MockDocumentSnapshot]) {
-        self.documents = documents
-    }
-}
-
-class MockDocumentSnapshot {
-    var data: [String: Any]
-    
-    init(data: [String: Any]) {
-        self.data = data
+    override func getBookings() async throws -> [Booking] {
+        if shouldThrowError {
+            throw NSError(domain: "test", code: 401)
+        }
+        getBookingsCalled = true
+        return mockBookings
     }
     
-    func data() -> [String: Any] {
-        return data
+    override func cancelBooking(_ bookingId: String) async throws {
+        if shouldThrowError {
+            throw NSError(domain: "test", code: 401)
+        }
+        cancelBookingCalled = true
     }
 }

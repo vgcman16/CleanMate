@@ -2,6 +2,9 @@ import Foundation
 
 @MainActor
 class BookingViewModel: ObservableObject {
+    @Published private(set) var isLoading = false
+    @Published private(set) var showError = false
+    @Published private(set) var errorMessage = ""
     @Published var selectedDate = Date()
     @Published var selectedTime = Date()
     @Published var selectedAddress: Address?
@@ -9,9 +12,6 @@ class BookingViewModel: ObservableObject {
     @Published var specialInstructions = ""
     @Published var showAddressSheet = false
     @Published var showPaymentSheet = false
-    @Published var showError = false
-    @Published var errorMessage = ""
-    @Published var isLoading = false
     
     private let service: CleaningService
     private let bookingService: BookingService
@@ -36,7 +36,7 @@ class BookingViewModel: ObservableObject {
         
         do {
             let booking = createBookingObject()
-            let _ = try await bookingService.createBooking(booking)
+            _ = try await bookingService.createBooking(booking)
             return true
         } catch {
             errorMessage = error.localizedDescription
@@ -46,7 +46,7 @@ class BookingViewModel: ObservableObject {
     }
     
     private func validateBooking() -> Bool {
-        guard let _ = selectedAddress else {
+        guard selectedAddress != nil else {
             errorMessage = "Please select an address"
             showError = true
             return false

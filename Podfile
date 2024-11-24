@@ -28,6 +28,8 @@ target 'CleanMate' do
   
   # Payments and Analytics
   pod 'Stripe', '~> 23.18.0'
+  pod 'StripePaymentSheet', '~> 23.18.0'
+  pod 'StripeApplePay', '~> 23.18.0'
   pod 'Analytics', '~> 4.1.0'  # Segment analytics
   
   # Calendar and Scheduling

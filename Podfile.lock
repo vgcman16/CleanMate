@@ -1215,6 +1215,11 @@ PODS:
     - StripePayments/Stripe3DS2 (= 23.18.3)
   - StripePayments/Stripe3DS2 (23.18.3):
     - StripeCore (= 23.18.3)
+  - StripePaymentSheet (23.18.3):
+    - StripeApplePay (= 23.18.3)
+    - StripeCore (= 23.18.3)
+    - StripePayments (= 23.18.3)
+    - StripePaymentsUI (= 23.18.3)
   - StripePaymentsUI (23.18.3):
     - StripeCore (= 23.18.3)
     - StripePayments (= 23.18.3)
@@ -1242,6 +1247,8 @@ DEPENDENCIES:
   - SDWebImage (~> 5.18.0)
   - SkeletonView (~> 1.30.0)
   - Stripe (~> 23.18.0)
+  - StripeApplePay (~> 23.18.0)
+  - StripePaymentSheet (~> 23.18.0)
   - SwiftDate (~> 7.0.0)
   - SwiftMessages (~> 9.0.0)
 
@@ -1286,6 +1293,7 @@ SPEC REPOS:
     - StripeApplePay
     - StripeCore
     - StripePayments
+    - StripePaymentSheet
     - StripePaymentsUI
     - StripeUICore
     - SwiftDate
@@ -1331,11 +1339,12 @@ SPEC CHECKSUMS:
   StripeApplePay: 1aa77f8ec7a6d9463fa8f49ae0672fe59dbf4c73
   StripeCore: fe10c34fb3c9ae18b986913f7e4460e7c653ce93
   StripePayments: 7084fed30c5f03f15ae23c5dce63715ba0b53e15
+  StripePaymentSheet: c8d25d4133476c6238d3cc932fb8219bb5ea49c0
   StripePaymentsUI: c12de264eda974d91e43a769f53a6c6afc9a1715
   StripeUICore: 090c4fe916d039616ce8f8de30392f4aeb33dd16
   SwiftDate: bbc26e26fc8c0c33fbee8c140c5e8a68293a148a
   SwiftMessages: 1a23aef303fa7bb26ad802880746cf8358e378fe
 
-PODFILE CHECKSUM: 77fdb2d9cdc2d91d049b9e207b9cd75a56c66a86
+PODFILE CHECKSUM: 604c446a231d370aa9d155edd4941a2da2b1c928
 
 COCOAPODS: 1.16.2

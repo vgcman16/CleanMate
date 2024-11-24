@@ -36,6 +36,8 @@ post_install do |installer|
         config.build_settings['HEADER_SEARCH_PATHS'] = '$(inherited) ${PODS_ROOT}/BoringSSL-GRPC/src/include ${PODS_ROOT}/gRPC-C++/include'
         config.build_settings['COPY_PHASE_STRIP'] = 'NO'
         config.build_settings['SKIP_INSTALL'] = 'YES'
+        config.build_settings['PRESERVE_PATHS'] = '${PODS_ROOT}/**/*.h'
+        config.build_settings['EXCLUDED_SOURCE_FILE_NAMES'] = '*.upb.h *.upb_minitable.h'
       end
     end
   end

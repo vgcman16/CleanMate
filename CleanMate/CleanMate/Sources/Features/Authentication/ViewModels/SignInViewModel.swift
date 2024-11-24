@@ -1,21 +1,11 @@
 import Foundation
 
-@MainActor
-class SignInViewModel: ObservableObject {
-    @Published
-    private(set) var isLoading = false
-    
-    @Published
-    private(set) var showError = false
-    
-    @Published
-    private(set) var errorMessage = ""
-    
-    @Published
-    var email = ""
-    
-    @Published
-    var password = ""
+@MainActor class SignInViewModel: ObservableObject {
+    @Published private(set) var isLoading = false
+    @Published private(set) var showError = false
+    @Published private(set) var errorMessage = ""
+    @Published var email = ""
+    @Published var password = ""
     
     private let authService: AuthenticationService
     

@@ -3,13 +3,9 @@ import Firebase
 import FirebaseMessaging
 import IQKeyboardManagerSwift
 
-@main
-struct CleanMateApp: App {
-    @StateObject
-    private var appState = AppState()
-    
-    @UIApplicationDelegateAdaptor(AppDelegate.self)
-    private var delegate
+@main struct CleanMateApp: App {
+    @StateObject private var appState = AppState()
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     
     var body: some Scene {
         WindowGroup {

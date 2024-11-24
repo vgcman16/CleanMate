@@ -1,36 +1,16 @@
 import Foundation
 
-@MainActor
-class BookingViewModel: ObservableObject {
-    @Published
-    private(set) var isLoading = false
-    
-    @Published
-    private(set) var showError = false
-    
-    @Published
-    private(set) var errorMessage = ""
-    
-    @Published
-    var selectedDate = Date()
-    
-    @Published
-    var selectedTime = Date()
-    
-    @Published
-    var selectedAddress: Address?
-    
-    @Published
-    var numberOfRooms = 1
-    
-    @Published
-    var specialInstructions = ""
-    
-    @Published
-    var showAddressSheet = false
-    
-    @Published
-    var showPaymentSheet = false
+@MainActor class BookingViewModel: ObservableObject {
+    @Published private(set) var isLoading = false
+    @Published private(set) var showError = false
+    @Published private(set) var errorMessage = ""
+    @Published var selectedDate = Date()
+    @Published var selectedTime = Date()
+    @Published var selectedAddress: Address?
+    @Published var numberOfRooms = 1
+    @Published var specialInstructions = ""
+    @Published var showAddressSheet = false
+    @Published var showPaymentSheet = false
     
     private let service: CleaningService
     private let bookingService: BookingService

@@ -1,18 +1,10 @@
 import Foundation
 
-@MainActor
-class BookingsViewModel: ObservableObject {
-    @Published
-    private(set) var bookings: [Booking] = []
-    
-    @Published
-    private(set) var isLoading = false
-    
-    @Published
-    private(set) var showError = false
-    
-    @Published
-    private(set) var errorMessage = ""
+@MainActor class BookingsViewModel: ObservableObject {
+    @Published private(set) var bookings: [Booking] = []
+    @Published private(set) var isLoading = false
+    @Published private(set) var showError = false
+    @Published private(set) var errorMessage = ""
     
     private let bookingService: BookingService
     

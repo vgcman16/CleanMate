@@ -1,26 +1,13 @@
 import SwiftUI
 
 struct AddressFormView: View {
-    @Binding
-    var address: Address?
-    
-    @Environment(\.dismiss)
-    private var dismiss
-    
-    @State
-    private var street = ""
-    
-    @State
-    private var city = ""
-    
-    @State
-    private var state = ""
-    
-    @State
-    private var zipCode = ""
-    
-    @State
-    private var country = ""
+    @Binding var address: Address?
+    @Environment(\.dismiss) private var dismiss
+    @State private var street = ""
+    @State private var city = ""
+    @State private var state = ""
+    @State private var zipCode = ""
+    @State private var country = ""
     
     var body: some View {
         NavigationView {

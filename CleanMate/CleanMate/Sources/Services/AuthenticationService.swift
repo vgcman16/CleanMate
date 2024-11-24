@@ -6,14 +6,9 @@ import Combine
 class AuthenticationService: ObservableObject {
     static let shared = AuthenticationService()
     
-    @Published
-    private(set) var currentUser: User?
-    
-    @Published
-    private(set) var isAuthenticated = false
-    
-    @Published
-    private(set) var userData: UserData?
+    @Published private(set) var currentUser: User?
+    @Published private(set) var isAuthenticated = false
+    @Published private(set) var userData: UserData?
     
     private let db = Firestore.firestore()
     

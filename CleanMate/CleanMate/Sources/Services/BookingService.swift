@@ -2,6 +2,7 @@ import FirebaseFirestore
 import FirebaseAuth
 import Foundation
 
+@MainActor
 class BookingService {
     static let shared = BookingService()
     

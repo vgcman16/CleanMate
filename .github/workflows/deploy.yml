@@ -205,6 +205,8 @@ jobs:
           LANG: en_US.UTF-8
           LC_ALL: en_US.UTF-8
           DEVELOPER_DIR: /Applications/Xcode_16.app/Contents/Developer
+          PODS_ROOT: ${GITHUB_WORKSPACE}/Pods
+          PODS_CONFIGURATION_BUILD_DIR: ${GITHUB_WORKSPACE}/build/Build/Products
         run: |
           # Create build directory
           BUILD_DIR="${GITHUB_WORKSPACE}/build"
@@ -215,15 +217,13 @@ jobs:
           rm -rf Pods/
           rm -f Podfile.lock
           
-          # Install pods
+          # Install pods with verbose logging
           pod cache clean --all
-          pod repo update
-          pod install
+          pod repo update --verbose
+          pod install --verbose
           
-          # Show xcodebuild version
+          # Show xcodebuild version and workspace info
           xcodebuild -version
-          
-          # List schemes
           xcodebuild -list -workspace CleanMate.xcworkspace
           
           # Build the app with detailed output
@@ -253,7 +253,9 @@ jobs:
             BUILD_DIR="$BUILD_DIR" \
             CONFIGURATION_BUILD_DIR="$BUILD_DIR/Build/Products" \
             DWARF_DSYM_FOLDER_PATH="$BUILD_DIR/Build/Products" \
-            FRAMEWORK_SEARCH_PATHS="$(PODS_ROOT)/** $(PODS_CONFIGURATION_BUILD_DIR)/**" \
+            FRAMEWORK_SEARCH_PATHS="$PODS_ROOT/** $PODS_CONFIGURATION_BUILD_DIR/**" \
+            BUILD_LIBRARY_FOR_DISTRIBUTION=YES \
+            CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES \
             | tee build.log | xcpretty && exit ${PIPESTATUS[0]}
           
           # If build fails, show the full log

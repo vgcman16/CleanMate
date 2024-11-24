@@ -65,8 +65,11 @@ struct AddCardView: View {
                     .disabled(!viewModel.isValid)
                 }
             }
-            .alert("Error", isPresented: $viewModel.showError) {
-                Button("OK", role: .cancel) {}
+            .alert(
+                "Error",
+                isPresented: $viewModel.showError
+            ) {
+                Button("OK", role: .cancel) { }
             } message: {
                 Text(viewModel.errorMessage ?? "An error occurred")
             }

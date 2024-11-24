@@ -1,5 +1,6 @@
-import Foundation
+import FirebaseFirestore
 import FirebaseFirestoreSwift
+import Foundation
 import Stripe
 
 struct PaymentIntent: Codable, Identifiable {
@@ -14,11 +15,11 @@ struct PaymentIntent: Codable, Identifiable {
     var updatedAt: Date
     
     enum PaymentStatus: String, Codable {
-        case pending = "pending"
-        case processing = "processing"
-        case succeeded = "succeeded"
-        case failed = "failed"
-        case canceled = "canceled"
+        case pending
+        case processing
+        case succeeded
+        case failed
+        case canceled
         
         var displayText: String {
             switch self {

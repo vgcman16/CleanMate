@@ -1,8 +1,9 @@
-import Foundation
-import Stripe
+import Combine
 import FirebaseFirestore
 import FirebaseFirestoreSwift
+import Foundation
 import PassKit
+import Stripe
 
 class PaymentService: ObservableObject {
     static let shared = PaymentService()
@@ -30,12 +31,16 @@ class PaymentService: ObservableObject {
     }
     
     private func fetchStripeConfig() async throws -> PaymentConfiguration {
-        let document = try await db.collection("config").document("stripe").getDocument()
+        let document = try await db.collection("config")
+            .document("stripe")
+            .getDocument()
         return try document.data(as: PaymentConfiguration.self)
     }
     
     func fetchSavedPaymentMethods(for userId: String) {
-        db.collection("users").document(userId).collection("paymentMethods")
+        db.collection("users")
+            .document(userId)
+            .collection("paymentMethods")
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let documents = snapshot?.documents else {
                     print("Error fetching payment methods: \(error?.localizedDescription ?? "Unknown error")")
@@ -125,7 +130,8 @@ class PaymentService: ObservableObject {
         
         // If payment succeeded, update booking status
         if intent.status == .succeeded {
-            try await db.collection("bookings").document(intent.bookingId)
+            try await db.collection("bookings")
+                .document(intent.bookingId)
                 .updateData([
                     "paymentStatus": Booking.PaymentStatus.paid.rawValue,
                     "status": Booking.BookingStatus.confirmed.rawValue,

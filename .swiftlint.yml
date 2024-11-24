@@ -2,10 +2,10 @@ disabled_rules:
   - trailing_whitespace
   - multiple_closures_with_trailing_closure
   - identifier_name
+  - empty_first_line
 
 opt_in_rules:
   - array_init
-  - attributes
   - closure_end_indentation
   - closure_spacing
   - collection_alignment
@@ -108,39 +108,3 @@ custom_rules:
     regex: '//\S'
     message: "There should be a space after //"
     severity: warning
-
-  empty_first_line:
-    name: "Empty First Line"
-    regex: '(?-m)^(?!\n)'
-    message: "There should be an empty line at the beginning of the file"
-    severity: warning
-
-attributes:
-  always_on_line_above:
-    - "@main"
-    - "@MainActor"
-    - "@UIApplicationMain"
-    - "@NSApplicationMain"
-    - "@objc"
-    - "@IBAction"
-    - "@IBOutlet"
-    - "@IBInspectable"
-    - "@GKInspectable"
-    - "@NSManaged"
-    - "@escaping"
-    - "@autoclosure"
-    - "@testable"
-    - "@available"
-    - "@discardableResult"
-    - "@warn_unqualified_access"
-    - "@objcMembers"
-    - "@nonobjc"
-    - "@NSCopying"
-    - "@NSApplicationDelegateAdaptor"
-    - "@UIApplicationDelegateAdaptor"
-    - "@StateObject"
-    - "@ObservedObject"
-    - "@Environment"
-    - "@EnvironmentObject"
-    - "@Binding"
-    - "@Published"

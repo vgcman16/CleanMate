@@ -202,13 +202,23 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
+          DEVELOPER_DIR: /Applications/Xcode_16.app/Contents/Developer
         run: |
           # Create build directory
           BUILD_DIR="${GITHUB_WORKSPACE}/build"
           mkdir -p "$BUILD_DIR"
           
-          # Clean DerivedData
+          # Clean DerivedData and Pods
           rm -rf ~/Library/Developer/Xcode/DerivedData/*
+          rm -rf Pods/
+          rm -f Podfile.lock
+          
+          # Install pods
+          pod cache clean --all
+          pod repo update
+          pod install
           
           # Show xcodebuild version
           xcodebuild -version
@@ -243,6 +253,7 @@ jobs:
             BUILD_DIR="$BUILD_DIR" \
             CONFIGURATION_BUILD_DIR="$BUILD_DIR/Build/Products" \
             DWARF_DSYM_FOLDER_PATH="$BUILD_DIR/Build/Products" \
+            FRAMEWORK_SEARCH_PATHS="$(PODS_ROOT)/** $(PODS_CONFIGURATION_BUILD_DIR)/**" \
             | tee build.log | xcpretty && exit ${PIPESTATUS[0]}
           
           # If build fails, show the full log

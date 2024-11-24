@@ -23,23 +23,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.makeKeyAndVisible()
     }
     
-    func sceneDidDisconnect(_ scene: UIScene) {
-        // Called when the scene is being released by the system
-    }
+    func sceneDidDisconnect(_ scene: UIScene) {}
     
-    func sceneDidBecomeActive(_ scene: UIScene) {
-        // Called when the scene has moved from an inactive state to an active state
-    }
+    func sceneDidBecomeActive(_ scene: UIScene) {}
     
-    func sceneWillResignActive(_ scene: UIScene) {
-        // Called when the scene will move from an active state to an inactive state
-    }
+    func sceneWillResignActive(_ scene: UIScene) {}
     
-    func sceneWillEnterForeground(_ scene: UIScene) {
-        // Called as the scene transitions from the background to the foreground
-    }
+    func sceneWillEnterForeground(_ scene: UIScene) {}
     
-    func sceneDidEnterBackground(_ scene: UIScene) {
-        // Called as the scene transitions from the foreground to the background
-    }
+    func sceneDidEnterBackground(_ scene: UIScene) {}
 }

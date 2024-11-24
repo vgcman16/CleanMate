@@ -17,29 +17,13 @@ struct CleanMateApp: App {
 }
 
 class AppDelegate: NSObject, UIApplicationDelegate {
-    
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        // Configure Firebase
         FirebaseApp.configure()
-        
-        // Configure Push Notifications
-        UNUserNotificationCenter.current().delegate = self
-        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
-        
-        // Request authorization without using discardable let
-        _ = UNUserNotificationCenter.current().requestAuthorization(
-            options: authOptions
-        ) { _, _ in }
-        
-        application.registerForRemoteNotifications()
-        
-        // Configure IQKeyboardManager
-        IQKeyboardManager.shared.enable = true
-        IQKeyboardManager.shared.shouldResignOnTouchOutside = true
-        
+        setupNotifications(application)
+        setupKeyboardManager()
         return true
     }
     
@@ -49,12 +33,23 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     ) {
         Messaging.messaging().apnsToken = deviceToken
     }
+    
+    private func setupNotifications(_ application: UIApplication) {
+        UNUserNotificationCenter.current().delegate = self
+        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
+        _ = UNUserNotificationCenter.current().requestAuthorization(
+            options: authOptions
+        ) { _, _ in }
+        application.registerForRemoteNotifications()
+    }
+    
+    private func setupKeyboardManager() {
+        IQKeyboardManager.shared.enable = true
+        IQKeyboardManager.shared.shouldResignOnTouchOutside = true
+    }
 }
 
-// MARK: - UNUserNotificationCenterDelegate
-
 extension AppDelegate: UNUserNotificationCenterDelegate {
-    
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,

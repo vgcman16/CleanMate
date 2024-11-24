@@ -15,8 +15,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return true
     }
     
-    // MARK: - UISceneSession Lifecycle
-    
     func application(
         _ application: UIApplication,
         configurationForConnecting connectingSceneSession: UISceneSession,
@@ -31,20 +29,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
         didDiscardSceneSessions sceneSessions: Set<UISceneSession>
-    ) {
-        // Called when the user discards a scene session
-    }
-    
-    // MARK: - Push Notifications
+    ) {}
     
     private func setupNotifications(_ application: UIApplication) {
         UNUserNotificationCenter.current().delegate = self
-        
         let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
         _ = UNUserNotificationCenter.current().requestAuthorization(
             options: authOptions
         ) { _, _ in }
-        
         application.registerForRemoteNotifications()
     }
     
@@ -62,8 +54,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         print("Failed to register for notifications: \(error.localizedDescription)")
     }
 }
-
-// MARK: - UNUserNotificationCenterDelegate
 
 extension AppDelegate: UNUserNotificationCenterDelegate {
     func userNotificationCenter(

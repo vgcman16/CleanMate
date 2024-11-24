@@ -207,6 +207,9 @@ jobs:
           BUILD_DIR="${GITHUB_WORKSPACE}/build"
           mkdir -p "$BUILD_DIR"
           
+          # Clean DerivedData
+          rm -rf ~/Library/Developer/Xcode/DerivedData/*
+          
           # Build the app
           echo "Building app..."
           xcodebuild -workspace CleanMate.xcworkspace \
@@ -223,6 +226,9 @@ jobs:
             EXPANDED_CODE_SIGN_IDENTITY="-" \
             EXPANDED_PROVISIONING_PROFILE="$PROVISIONING_PROFILE_BASE64" \
             GCC_PREPROCESSOR_DEFINITIONS='${inherited} COCOAPODS=1' \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS="RELEASE" \
+            ONLY_ACTIVE_ARCH=NO \
+            DEBUG_INFORMATION_FORMAT=dwarf-with-dsym \
             | xcpretty
           
           # Export the app

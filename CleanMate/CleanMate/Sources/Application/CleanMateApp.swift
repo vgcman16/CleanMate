@@ -5,11 +5,8 @@ import IQKeyboardManagerSwift
 
 @main
 struct CleanMateApp: App {
-    @StateObject
-    private var appState = AppState()
-    
-    @UIApplicationDelegateAdaptor(AppDelegate.self)
-    private var delegate
+    @StateObject private var appState = AppState()
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     
     var body: some Scene {
         WindowGroup {
@@ -20,6 +17,7 @@ struct CleanMateApp: App {
 }
 
 class AppDelegate: NSObject, UIApplicationDelegate {
+    
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -56,6 +54,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 // MARK: - UNUserNotificationCenterDelegate
 
 extension AppDelegate: UNUserNotificationCenterDelegate {
+    
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,

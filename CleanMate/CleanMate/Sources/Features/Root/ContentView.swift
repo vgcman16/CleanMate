@@ -1,11 +1,8 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject
-    private var appState: AppState
-    
-    @EnvironmentObject
-    private var authService: AuthenticationService
+    @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var authService: AuthenticationService
     
     var body: some View {
         Group {
@@ -43,11 +40,8 @@ struct ContentView: View {
 }
 
 struct ProfileView: View {
-    @EnvironmentObject
-    private var authService: AuthenticationService
-    
-    @State
-    private var showingLogoutAlert = false
+    @EnvironmentObject private var authService: AuthenticationService
+    @State private var showingLogoutAlert = false
     
     var body: some View {
         NavigationView {

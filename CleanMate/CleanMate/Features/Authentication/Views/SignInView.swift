@@ -3,93 +3,105 @@ import FirebaseAuth
 import SwiftUI
 
 struct SignInView: View {
-    @StateObject private var viewModel = SignInViewModel()
-    @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject private var authService: AuthenticationService
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var email = ""
+    @State private var password = ""
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var isLoading = false
     
     var body: some View {
         NavigationView {
-            Form {
-                Section {
-                    TextField("Email", text: $viewModel.email)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                    
-                    SecureField("Password", text: $viewModel.password)
-                        .textContentType(.password)
-                } header: {
-                    Text("Sign In")
-                }
+            VStack(spacing: 20) {
+                Image("logo")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 120, height: 120)
                 
-                Section {
-                    Button(action: signIn) {
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle())
-                        } else {
-                            Text("Sign In")
-                                .frame(maxWidth: .infinity)
-                        }
+                Text("Welcome Back!")
+                    .font(.title)
+                    .fontWeight(.bold)
+                
+                VStack(spacing: 16) {
+                    TextField(
+                        "Email",
+                        text: $email
+                    )
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .textContentType(.emailAddress)
+                    .keyboardType(.emailAddress)
+                    .autocapitalization(.none)
+                    
+                    SecureField(
+                        "Password",
+                        text: $password
+                    )
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .textContentType(.password)
+                }
+                .padding(.horizontal)
+                
+                Button {
+                    Task {
+                        await signIn()
                     }
-                    .disabled(!viewModel.isValid || viewModel.isLoading)
+                } label: {
+                    if isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    } else {
+                        Text("Sign In")
+                            .fontWeight(.semibold)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                .padding(.horizontal)
+                .disabled(isLoading)
+                
+                NavigationLink {
+                    SignUpView()
+                } label: {
+                    Text("Don't have an account? Sign Up")
+                        .foregroundColor(.blue)
                 }
             }
-            .navigationTitle("Sign In")
+            .padding()
             .navigationBarTitleDisplayMode(.inline)
-            .alert(
-                "Error",
-                isPresented: $viewModel.showError
-            ) {
-                Button("OK", role: .cancel) { }
+            .alert("Error", isPresented: $showError) {
+                Button("OK") {
+                    showError = false
+                }
             } message: {
-                Text(viewModel.errorMessage ?? "An error occurred")
+                Text(errorMessage)
             }
         }
     }
     
-    func signIn() {
-        Task {
-            await viewModel.signIn()
-        }
-    }
-}
-
-class SignInViewModel: ObservableObject {
-    @Published var email = ""
-    @Published var password = ""
-    @Published var isLoading = false
-    @Published var showError = false
-    @Published var errorMessage: String?
-    
-    private var cancellables = Set<AnyCancellable>()
-    
-    var isValid: Bool {
-        !email.isEmpty && !password.isEmpty
-    }
-    
-    func signIn() async {
-        guard isValid else {
-            showError(message: "Please fill in all fields")
+    private func signIn() async {
+        guard !email.isEmpty && !password.isEmpty else {
+            errorMessage = "Please fill in all fields"
+            showError = true
             return
         }
         
         isLoading = true
+        defer { isLoading = false }
+        
         do {
-            try await AuthenticationService.shared.signIn(email: email, password: password)
+            try await authService.signIn(
+                email: email,
+                password: password
+            )
+            dismiss()
         } catch {
-            showError(message: error.localizedDescription)
-        }
-        isLoading = false
-    }
-    
-    func forgotPassword() {
-        // Implement password reset logic
-    }
-    
-    private func showError(message: String) {
-        DispatchQueue.main.async {
-            self.errorMessage = message
-            self.showError = true
+            errorMessage = error.localizedDescription
+            showError = true
         }
     }
 }
@@ -136,5 +148,12 @@ struct CustomSecureField: View {
         .padding()
         .background(Color(.systemGray6))
         .cornerRadius(10)
+    }
+}
+
+struct SignInView_Previews: PreviewProvider {
+    static var previews: some View {
+        SignInView()
+            .environmentObject(AuthenticationService.shared)
     }
 }

@@ -1,178 +1,179 @@
 import Combine
 import FirebaseAuth
-import PhoneNumberKit
 import SwiftUI
 
 struct SignUpView: View {
-    @StateObject private var viewModel = SignUpViewModel()
-    @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject private var authService: AuthenticationService
+    @Environment(\.dismiss) private var dismiss
     
-    var body: some View {
-        NavigationView {
-            Form {
-                Section {
-                    TextField("Full Name", text: $viewModel.fullName)
-                        .textContentType(.name)
-                    
-                    TextField("Email", text: $viewModel.email)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                    
-                    TextField("Phone", text: $viewModel.phoneNumber)
-                        .textContentType(.telephoneNumber)
-                        .keyboardType(.phonePad)
-                    
-                    SecureField("Password", text: $viewModel.password)
-                        .textContentType(.newPassword)
-                    
-                    SecureField("Confirm Password", text: $viewModel.confirmPassword)
-                        .textContentType(.newPassword)
-                } header: {
-                    Text("Account Details")
-                }
-                
-                Section {
-                    Toggle("Accept Terms", isOn: $viewModel.acceptedTerms)
-                    
-                    Button(action: { viewModel.showTerms = true }) {
-                        Text("View Terms and Conditions")
-                            .foregroundColor(.blue)
-                    }
-                } header: {
-                    Text("Terms and Conditions")
-                }
-                
-                Button(action: { Task { await viewModel.signUp() } }) {
-                    if viewModel.isLoading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle())
-                    } else {
-                        Text("Create Account")
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-                .disabled(!viewModel.isValid || viewModel.isLoading)
-            }
-            .navigationTitle("Sign Up")
-            .navigationBarTitleDisplayMode(.inline)
-            .alert(
-                "Error",
-                isPresented: $viewModel.showError
-            ) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text(viewModel.errorMessage ?? "An error occurred")
-            }
-            .sheet(
-                isPresented: $viewModel.showTerms
-            ) {
-                TermsView(
-                    isPresented: $viewModel.showTerms,
-                    onAccept: { viewModel.acceptedTerms = true }
-                )
-            }
-        }
-    }
-}
-
-class SignUpViewModel: ObservableObject {
-    @Published var fullName = ""
-    @Published var email = ""
-    @Published var phoneNumber = ""
-    @Published var password = ""
-    @Published var confirmPassword = ""
-    @Published var acceptedTerms = false
-    @Published var isLoading = false
-    @Published var showError = false
-    @Published var errorMessage = ""
-    @Published var showTerms = false
-    
-    private let phoneNumberKit = PhoneNumberKit()
-    
-    var isValid: Bool {
-        !fullName.isEmpty &&
-        !email.isEmpty &&
-        isValidPhoneNumber &&
-        !password.isEmpty &&
-        password == confirmPassword &&
-        password.count >= 8 &&
-        acceptedTerms
-    }
-    
-    var isValidPhoneNumber: Bool {
-        do {
-            _ = try phoneNumberKit.parse(phoneNumber)
-            return true
-        } catch {
-            return false
-        }
-    }
-    
-    func signUp() async {
-        guard isValid else { return }
-        
-        isLoading = true
-        do {
-            try await AuthenticationService.shared.signUp(
-                email: email,
-                password: password,
-                fullName: fullName,
-                phoneNumber: phoneNumber
-            )
-        } catch {
-            showError(message: error.localizedDescription)
-        }
-        isLoading = false
-    }
-    
-    private func showError(message: String) {
-        DispatchQueue.main.async {
-            self.errorMessage = message
-            self.showError = true
-        }
-    }
-}
-
-struct TermsView: View {
-    @Binding var isPresented: Bool
-    let onAccept: () -> Void
+    @State private var email = ""
+    @State private var password = ""
+    @State private var confirmPassword = ""
+    @State private var name = ""
+    @State private var phone = ""
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var isLoading = false
     
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Terms and Conditions")
+                VStack(spacing: 20) {
+                    Image("logo")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 120, height: 120)
+                    
+                    Text("Create Account")
                         .font(.title)
                         .fontWeight(.bold)
                     
-                    Text("""
-                        1. Service Agreement
-                        By using CleanMate, you agree to abide by our service terms.
+                    VStack(spacing: 16) {
+                        TextField(
+                            "Full Name",
+                            text: $name
+                        )
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .textContentType(.name)
                         
-                        2. Booking and Cancellation
-                        - 24-hour notice required for cancellation
-                        - Late cancellations may incur fees
+                        TextField(
+                            "Email",
+                            text: $email
+                        )
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .textContentType(.emailAddress)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
                         
-                        3. Payment Terms
-                        - Payment is processed after service completion
-                        - All major credit cards accepted
+                        TextField(
+                            "Phone",
+                            text: $phone
+                        )
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .textContentType(.telephoneNumber)
+                        .keyboardType(.phonePad)
                         
-                        4. Privacy Policy
-                        We protect your personal information as outlined in our privacy policy.
-                        """)
+                        SecureField(
+                            "Password",
+                            text: $password
+                        )
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .textContentType(.newPassword)
+                        
+                        SecureField(
+                            "Confirm Password",
+                            text: $confirmPassword
+                        )
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .textContentType(.newPassword)
+                    }
+                    .padding(.horizontal)
+                    
+                    Button {
+                        Task {
+                            await signUp()
+                        }
+                    } label: {
+                        if isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        } else {
+                            Text("Sign Up")
+                                .fontWeight(.semibold)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                    .padding(.horizontal)
+                    .disabled(isLoading)
+                    
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("Already have an account? Sign In")
+                            .foregroundColor(.blue)
+                    }
                 }
                 .padding()
             }
-            .navigationBarItems(
-                leading: Button("Close") {
-                    isPresented = false
-                },
-                trailing: Button("Accept") {
-                    onAccept()
-                    isPresented = false
+            .navigationBarTitleDisplayMode(.inline)
+            .alert("Error", isPresented: $showError) {
+                Button("OK") {
+                    showError = false
                 }
-            )
+            } message: {
+                Text(errorMessage)
+            }
         }
+    }
+    
+    private func signUp() async {
+        guard validateInputs() else { return }
+        
+        isLoading = true
+        defer { isLoading = false }
+        
+        do {
+            try await authService.signUp(
+                email: email,
+                password: password,
+                name: name,
+                phone: phone
+            )
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+    
+    private func validateInputs() -> Bool {
+        if name.isEmpty {
+            errorMessage = "Please enter your name"
+            showError = true
+            return false
+        }
+        
+        if email.isEmpty {
+            errorMessage = "Please enter your email"
+            showError = true
+            return false
+        }
+        
+        if phone.isEmpty {
+            errorMessage = "Please enter your phone number"
+            showError = true
+            return false
+        }
+        
+        if password.isEmpty {
+            errorMessage = "Please enter a password"
+            showError = true
+            return false
+        }
+        
+        if password.count < 6 {
+            errorMessage = "Password must be at least 6 characters"
+            showError = true
+            return false
+        }
+        
+        if password != confirmPassword {
+            errorMessage = "Passwords do not match"
+            showError = true
+            return false
+        }
+        
+        return true
+    }
+}
+
+struct SignUpView_Previews: PreviewProvider {
+    static var previews: some View {
+        SignUpView()
+            .environmentObject(AuthenticationService.shared)
     }
 }

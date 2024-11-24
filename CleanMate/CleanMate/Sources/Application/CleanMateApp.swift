@@ -5,10 +5,13 @@ import IQKeyboardManagerSwift
 
 @main
 struct CleanMateApp: App {
-    @StateObject private var appState = AppState()
-    @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
+    @StateObject
+    private var appState = AppState()
     
-    var body: some Scene {
+    @UIApplicationDelegateAdaptor(AppDelegate.self)
+    private var delegate
+    
+    var body: some View {
         WindowGroup {
             ContentView()
                 .environmentObject(appState)
